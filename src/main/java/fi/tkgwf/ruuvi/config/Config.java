@@ -1,10 +1,6 @@
 package fi.tkgwf.ruuvi.config;
 
-import fi.tkgwf.ruuvi.db.DBConnection;
-import fi.tkgwf.ruuvi.db.DummyDBConnection;
-import fi.tkgwf.ruuvi.db.InfluxDBConnection;
-import fi.tkgwf.ruuvi.db.LegacyInfluxDBConnection;
-import fi.tkgwf.ruuvi.db.PrometheusExporter;
+import fi.tkgwf.ruuvi.db.*;
 import fi.tkgwf.ruuvi.strategy.LimitingStrategy;
 import fi.tkgwf.ruuvi.strategy.impl.DefaultDiscardingWithMotionSensitivityStrategy;
 import fi.tkgwf.ruuvi.strategy.impl.DiscardUntilEnoughTimeHasElapsedStrategy;
@@ -18,17 +14,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -47,6 +34,9 @@ public abstract class Config {
     private static final String DEFAULT_DUMP_COMMAND = "hcidump --raw";
 
     private static String influxUrl;
+    private static String influxToken;
+    private static String influxOrg;
+    private static String influxBucket;
     private static String influxDatabase;
     private static String influxMeasurement;
     private static String influxUser;
@@ -98,6 +88,9 @@ public abstract class Config {
         influxMeasurement = "ruuvi_measurements";
         influxUser = "ruuvi";
         influxPassword = "ruuvi";
+        influxToken = "ruuvi";
+        influxOrg = "ruuvi";
+        influxBucket = "ruuvi";
         influxRetentionPolicy = "autogen";
         influxGzip = true;
         influxBatch = true;
@@ -129,7 +122,7 @@ public abstract class Config {
             if (configFile != null) {
                 LOG.debug("Config: " + configFile);
                 Properties props = new Properties();
-                props.load(new InputStreamReader(new FileInputStream(configFile), Charset.forName("UTF-8")));
+                props.load(new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8));
                 readConfigFromProperties(props);
             }
         } catch (IOException ex) {
@@ -143,6 +136,9 @@ public abstract class Config {
         influxMeasurement = props.getProperty("influxMeasurement", influxMeasurement);
         influxUser = props.getProperty("influxUser", influxUser);
         influxPassword = props.getProperty("influxPassword", influxPassword);
+        influxToken = props.getProperty("influxToken", influxToken);
+        influxOrg = props.getProperty("influxOrg", influxOrg);
+        influxBucket = props.getProperty("influxBucket", influxBucket);
         measurementUpdateLimit = parseLong(props, "measurementUpdateLimit", measurementUpdateLimit);
         storageMethod = props.getProperty("storage.method", storageMethod);
         storageValues = props.getProperty("storage.values", storageValues);
@@ -307,7 +303,7 @@ public abstract class Config {
             try {
                 final File jarLocation = new File(Config.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile();
                 Optional<File> configFile = findConfigFile(propertiesFileName, jarLocation);
-                if (!configFile.isPresent()) {
+                if (configFile.isEmpty()) {
                     // look for config files in the parent directory if none found in the current directory, this is useful during development when
                     // RuuviCollector can be run from maven target directory directly while the config file sits in the project root
                     final File parentFile = jarLocation.getParentFile();
@@ -332,7 +328,7 @@ public abstract class Config {
             if (configFile != null) {
                 LOG.debug("Tag names: " + configFile);
                 Properties props = new Properties();
-                props.load(new InputStreamReader(new FileInputStream(configFile), Charset.forName("UTF-8")));
+                props.load(new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8));
                 Enumeration<?> e = props.propertyNames();
                 while (e.hasMoreElements()) {
                     String key = StringUtils.trimToEmpty((String) e.nextElement()).toUpperCase();
@@ -413,6 +409,18 @@ public abstract class Config {
 
     public static String getInfluxPassword() {
         return influxPassword;
+    }
+
+    public static String getInfluxToken() {
+        return influxToken;
+    }
+
+    public static String getInfluxOrg() {
+        return influxOrg;
+    }
+
+    public static String getInfluxBucket() {
+        return influxBucket;
     }
 
     public static String getInfluxRetentionPolicy() {
