@@ -355,6 +355,8 @@ public abstract class Config {
         switch (storageMethod) {
             case "influxdb":
                 return new InfluxDBConnection();
+            case "influxdb2":
+                return new InfluxDB2Connection();
             case "influxdb_legacy":
                 return new LegacyInfluxDBConnection();
             case "prometheus":
