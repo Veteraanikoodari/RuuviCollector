@@ -15,6 +15,11 @@
 #influxUser=ruuvi
 #influxPassword=ruuvi
 
+# InfluxDB2 authentication (User and Password not required)
+#influxToken
+#influxOrg
+#influxBucket
+
 # Minimum interval in milliseconds for measurements per measurement type per tag.
 # This is to avoid saving too many measurements especially with the default firmware which sends measurements every 0.5 seconds
 # For example 9900 means post at most one measurement type per tag per 9.9 seconds
