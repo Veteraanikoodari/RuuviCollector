@@ -1,6 +1,8 @@
 package fi.tkgwf.ruuvi.db;
 
 import com.influxdb.client.*;
+import com.influxdb.client.domain.BucketRetentionRules;
+import com.influxdb.client.domain.Task;
 import com.influxdb.client.write.Point;
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Config;

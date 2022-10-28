@@ -357,8 +357,6 @@ public abstract class Config {
                 return new InfluxDBConnection();
             case "influxdb2":
                 return new InfluxDB2Connection();
-            case "influxdb_legacy":
-                return new LegacyInfluxDBConnection();
             case "prometheus":
                 return new PrometheusExporter(getPrometheusHttpPort());
             case "dummy":

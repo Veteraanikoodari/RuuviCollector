@@ -1,25 +1,13 @@
 # RuuviCollector
 
-RuuviCollector is an application for collecting sensor measurements from RuuviTags and storing them to InfluxDB. For more about how and for what this is used for, see [this](https://f.ruuvi.com/t/collecting-ruuvitag-measurements-and-displaying-them-with-grafana/267) post.
-
-Do you have a [Ruuvi Gateway](https://ruuvi.com/gateway/)? You might be insterested in [RuuviBridge](https://github.com/Scrin/RuuviBridge) instead. You can also use [ruuvi-go-gateway](https://github.com/Scrin/ruuvi-go-gateway) if you want to upgrade to the "new stack" without needing a physical Ruuvi Gateway, or want to use a mix of both.
-
-Note: This tool is primarily intended for advanced users, so some knowledge in Linux and Java might be necessary for fully understanding how to use this. However there is a more beginner friendly setup "guide" [here](https://ruuvi.com/setting-up-raspberry-pi-as-a-ruuvi-gateway/)
+NOTE: this is a substantially modified version from original, intended for advanced users.
+All deprecated features have been removed and only InfluxDB2 support and Prometheus export remains.
 
 ### Features
 
 Supports following RuuviTag [Data Formats](https://github.com/ruuvi/ruuvi-sensor-protocols):
 
--   Data Format 2: Eddystone-URL, URL-safe base64 -encoded, kickstarter edition
--   Data Format 3: "RAW v1" BLE Manufacturer specific data, all current sensor readings
--   Data Format 4: Eddystone-URL, URL-safe base64 -encoded, with tag id
 -   Data Format 5: "RAW v2" BLE Manufacturer specific data, all current sensor readings + extra
-
-Additionally basic support for iBeacon and Eddystone exists:
-
--   iBeacon: MAC, RSSI and other receiver-side generated data
--   Eddystone UID: MAC, RSSI and other receiver-side generated data
--   Eddystone TLM: temperature, battery voltage, MAC, RSSI and other receiver-side generated data
 
 Supports following data from the tag (depending on tag firmware):
 
@@ -49,20 +37,22 @@ See [MEASUREMENTS.md](./MEASUREMENTS.md) for additional details about the measur
 -   Linux-based OS (this application uses the bluez stack for Bluetooth which is not available for Windows for example)
 -   Bluetooth adapter supporting Bluetooth Low Energy
 -   _bluez_ and _bluez-hcidump_ at least version 5.41 (For running the application, versions prior to 5.41 have a bug which causes the bluetooth to hang occasionally while doing BLE scanning)
--   Maven (For building from sources)
--   JDK8 (For building from sources, JRE8 is enough for just running the built JAR)
+-   Gradle (For building from sources)
+-   JDK11 (For building from sources, JRE11 is enough for just running the built JAR)
 
 ### Building
 
 Execute
 
 ```sh
-mvn clean package
+gradlew clean build
 ```
 
 ### Installation
 
 #### Automatic Setup
+
+TODO: update to docker only.
 
 Service scripts and other necessary stuff for "properly installing" this are
 available in the [service-setup](./service-setup/) directory.
