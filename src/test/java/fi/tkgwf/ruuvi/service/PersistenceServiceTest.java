@@ -1,25 +1,24 @@
 package fi.tkgwf.ruuvi.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import fi.tkgwf.ruuvi.TestFixture;
-import fi.tkgwf.ruuvi.bean.HCIData;
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
+import fi.tkgwf.ruuvi.bean.HCIData;
 import fi.tkgwf.ruuvi.config.Config;
 import fi.tkgwf.ruuvi.config.ConfigTest;
-import fi.tkgwf.ruuvi.db.DBConnection;
+import fi.tkgwf.ruuvi.db.RuuviDBConnection;
 import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import fi.tkgwf.ruuvi.strategy.LimitingStrategy;
 import fi.tkgwf.ruuvi.utils.HCIParser;
 import java.util.ArrayList;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class PersistenceServiceTest {
 
@@ -81,30 +80,65 @@ class PersistenceServiceTest {
         setClockToMilliseconds(0);
         final BeaconHandler handler = new BeaconHandler();
 
-        service.store(withAcceleration(withRssi(handler.handle(hciData).get(), 1), 1d)); // Store: first instance
-        service.store(withAcceleration(withRssi(handler.handle(hciData).get(), 2), 1d)); // Not: no time passed
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData).get(), 1), 1d)); // Store: first instance
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData).get(), 2), 1d)); // Not: no time passed
         setClockToMilliseconds(1000);
-        service.store(withAcceleration(withRssi(handler.handle(hciData).get(), 3), 1d)); // Not: still not enough time passed
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData).get(), 3),
+                        1d)); // Not: still not enough time passed
         setClockToMilliseconds(3000);
-        service.store(withAcceleration(withRssi(handler.handle(hciData).get(), 4), 1d)); // Not: same as above
-        service.store(withAcceleration(withRssi(handler.handle(hciData2).get(), 5), 1d)); // Store: first instance
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData).get(), 4), 1d)); // Not: same as above
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData2).get(), 5), 1d)); // Store: first instance
         setClockToMilliseconds(6000);
-        service.store(withAcceleration(withRssi(handler.handle(hciData).get(), 6), 1.99d)); // Not: still not enough time passed; not using movement detection
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData).get(), 6),
+                        1.99d)); // Not: still not enough time passed; not using movement detection
         setClockToMilliseconds(9000);
-        service.store(withAcceleration(withRssi(handler.handle(hciData2).get(), 7), 1.99d)); // Store: movement detected
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData2).get(), 7),
+                        1.99d)); // Store: movement detected
         setClockToMilliseconds(10000);
-        service.store(withAcceleration(withRssi(handler.handle(hciData).get(), 8), 1d)); // Store: enough time has passed
-        service.store(withAcceleration(withRssi(handler.handle(hciData2).get(), 9), 1d)); // Store: movement detected
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData).get(), 8),
+                        1d)); // Store: enough time has passed
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData2).get(), 9),
+                        1d)); // Store: movement detected
         setClockToMilliseconds(11000);
-        service.store(withAcceleration(withRssi(handler.handle(hciData).get(), 10), 1d)); // Not: not enough time passed
-        service.store(withAcceleration(withRssi(handler.handle(hciData2).get(), 11), 1d)); // Store: happens right after movement was detected
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData).get(), 10),
+                        1d)); // Not: not enough time passed
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData2).get(), 11),
+                        1d)); // Store: happens right after movement was detected
         setClockToMilliseconds(12000);
-        service.store(withAcceleration(withRssi(handler.handle(hciData2).get(), 12), 1d)); // Not: no movement and not enough time passed
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData2).get(), 12),
+                        1d)); // Not: no movement and not enough time passed
         setClockToMilliseconds(90000);
-        service.store(withAcceleration(withRssi(handler.handle(hciData2).get(), 13), 1d)); // Store: enough time passed
+        service.store(
+                withAcceleration(
+                        withRssi(handler.handle(hciData2).get(), 13),
+                        1d)); // Store: enough time passed
 
         final List<EnhancedRuuviMeasurement> results = mockConnection.getMeasurements();
-//        assertEquals(8, results.size());
+        //        assertEquals(8, results.size());
         assertEquals(1, results.get(0).getRssi().intValue());
         assertEquals(5, results.get(1).getRssi().intValue());
         assertEquals(7, results.get(2).getRssi().intValue());
@@ -115,7 +149,8 @@ class PersistenceServiceTest {
         assertEquals(13, results.get(7).getRssi().intValue());
     }
 
-    private EnhancedRuuviMeasurement withAcceleration(final EnhancedRuuviMeasurement measurement, double accelerationX) {
+    private EnhancedRuuviMeasurement withAcceleration(
+            final EnhancedRuuviMeasurement measurement, double accelerationX) {
         measurement.setAccelerationX(accelerationX);
         return measurement;
     }
@@ -124,12 +159,13 @@ class PersistenceServiceTest {
         TestFixture.setClockToMilliseconds(() -> millis);
     }
 
-    private static EnhancedRuuviMeasurement withRssi(final EnhancedRuuviMeasurement measurement, final int rssi) {
+    private static EnhancedRuuviMeasurement withRssi(
+            final EnhancedRuuviMeasurement measurement, final int rssi) {
         measurement.setRssi(rssi);
         return measurement;
     }
 
-    public static class MockConnection implements DBConnection {
+    public static class MockConnection implements RuuviDBConnection {
 
         private final ArrayList<EnhancedRuuviMeasurement> measurements = new ArrayList<>();
         private boolean closeCalled = false;
@@ -156,7 +192,8 @@ class PersistenceServiceTest {
     public static class TestingStrategy implements LimitingStrategy {
 
         @Override
-        public Optional<EnhancedRuuviMeasurement> apply(final EnhancedRuuviMeasurement measurement) {
+        public Optional<EnhancedRuuviMeasurement> apply(
+                final EnhancedRuuviMeasurement measurement) {
             if (Arrays.asList(1, 5, 8, 10, 11).contains(measurement.getRssi())) {
                 return Optional.of(measurement);
             }

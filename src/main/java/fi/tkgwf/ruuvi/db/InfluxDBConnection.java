@@ -8,7 +8,7 @@ import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Point;
 
-public class InfluxDBConnection implements DBConnection {
+public class InfluxDBConnection implements RuuviDBConnection {
 
     private final InfluxDB influxDB;
 
@@ -22,8 +22,7 @@ public class InfluxDBConnection implements DBConnection {
                 Config.isInfluxGzip(),
                 Config.isInfluxBatch(),
                 Config.getInfluxBatchMaxSize(),
-                Config.getInfluxBatchMaxTimeMs()
-        );
+                Config.getInfluxBatchMaxTimeMs());
     }
 
     public InfluxDBConnection(
@@ -35,9 +34,11 @@ public class InfluxDBConnection implements DBConnection {
             boolean gzip,
             boolean batch,
             int batchSize,
-            int batchTime
-    ) {
-        influxDB = InfluxDBFactory.connect(url, user, password).setDatabase(database).setRetentionPolicy(retentionPolicy);
+            int batchTime) {
+        influxDB =
+                InfluxDBFactory.connect(url, user, password)
+                        .setDatabase(database)
+                        .setRetentionPolicy(retentionPolicy);
         if (gzip) {
             influxDB.enableGzip();
         } else {

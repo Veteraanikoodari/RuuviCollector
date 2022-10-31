@@ -1,23 +1,22 @@
 package fi.tkgwf.ruuvi;
 
+import static fi.tkgwf.ruuvi.TestFixture.RSSI_BYTE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Config;
 import fi.tkgwf.ruuvi.config.ConfigTest;
-import fi.tkgwf.ruuvi.db.DBConnection;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
+import fi.tkgwf.ruuvi.db.RuuviDBConnection;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
-
-import static fi.tkgwf.ruuvi.TestFixture.RSSI_BYTE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class MainTest {
 
@@ -34,22 +33,30 @@ class MainTest {
 
     @Test
     void integrationTest() {
-        // Setup the test. Use two devices and change one variable for each hcidump line so that the messages
+        // Setup the test. Use two devices and change one variable for each hcidump line so that the
+        // messages
         // can be told apart at the end.
 
         final String hcidataOfDevice1 = TestFixture.getDataFormat3Message();
-        final String hcidata2OfDevice2 = TestFixture.getDataFormat3Message()
-            .replace("AA", "BB"); // Changing the MAC address
+        final String hcidata2OfDevice2 =
+                TestFixture.getDataFormat3Message().replace("AA", "BB"); // Changing the MAC address
 
         final Main main = new Main();
-        final BufferedReader reader = new BufferedReader(new StringReader(
-            "Ignorable garbage at the start" + "\n"
-                + hcidataOfDevice1.replace(RSSI_BYTE, "01") + "\n"
-                + hcidataOfDevice1.replace(RSSI_BYTE, "02") + "\n"
-                + hcidataOfDevice1.replace(RSSI_BYTE, "03") + "\n"
-                + hcidata2OfDevice2.replace(RSSI_BYTE, "04") + "\n"
-                + hcidata2OfDevice2.replace(RSSI_BYTE, "05") + "\n"
-        ));
+        final BufferedReader reader =
+                new BufferedReader(
+                        new StringReader(
+                                "Ignorable garbage at the start"
+                                        + "\n"
+                                        + hcidataOfDevice1.replace(RSSI_BYTE, "01")
+                                        + "\n"
+                                        + hcidataOfDevice1.replace(RSSI_BYTE, "02")
+                                        + "\n"
+                                        + hcidataOfDevice1.replace(RSSI_BYTE, "03")
+                                        + "\n"
+                                        + hcidata2OfDevice2.replace(RSSI_BYTE, "04")
+                                        + "\n"
+                                        + hcidata2OfDevice2.replace(RSSI_BYTE, "05")
+                                        + "\n"));
 
         // The following are the timestamps on which the hcidump lines above will be read.
         // By default (see Config.getMeasurementUpdateLimit()) a measurement is discarded
@@ -76,8 +83,7 @@ class MainTest {
         TestFixture.setClockToMilliseconds(new FixedInstantsProvider(Arrays.asList(millis)));
     }
 
-
-    public static class MockConnection implements DBConnection {
+    public static class MockConnection implements RuuviDBConnection {
 
         private final ArrayList<EnhancedRuuviMeasurement> measurements = new ArrayList<>();
         private boolean closeCalled = false;
@@ -101,10 +107,7 @@ class MainTest {
         }
     }
 
-
-    /**
-     * A timestamp supplier whose readings can be pre-programmed.
-     */
+    /** A timestamp supplier whose readings can be pre-programmed. */
     static final class FixedInstantsProvider implements Supplier<Long> {
         private final List<Long> instants;
         private int readCount = 0;

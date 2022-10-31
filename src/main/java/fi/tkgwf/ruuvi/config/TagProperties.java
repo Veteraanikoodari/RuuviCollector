@@ -2,7 +2,6 @@ package fi.tkgwf.ruuvi.config;
 
 import fi.tkgwf.ruuvi.strategy.LimitingStrategy;
 import fi.tkgwf.ruuvi.strategy.impl.DefaultDiscardingWithMotionSensitivityStrategy;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
@@ -13,18 +12,21 @@ public class TagProperties {
     private final LimitingStrategy limitingStrategy;
     private final Predicate<String> influxDbFieldFilter;
 
-    private TagProperties(final String mac, final LimitingStrategy limitingStrategy, final Predicate<String> influxFieldFilter) {
+    private TagProperties(
+            final String mac,
+            final LimitingStrategy limitingStrategy,
+            final Predicate<String> influxFieldFilter) {
         this.mac = mac;
-        this.limitingStrategy = Optional.ofNullable(limitingStrategy)
-            .orElse(Config.getLimitingStrategy());
-        this.influxDbFieldFilter = Optional.ofNullable(influxFieldFilter)
-            .orElse(Config.getAllowedInfluxDbFieldsPredicate());
+        this.limitingStrategy =
+                Optional.ofNullable(limitingStrategy).orElse(Config.getLimitingStrategy());
+        this.influxDbFieldFilter =
+                Optional.ofNullable(influxFieldFilter)
+                        .orElse(Config.getAllowedInfluxDbFieldsPredicate());
     }
 
     public static TagProperties defaultValues() {
-        return new TagProperties(null,
-            Config.getLimitingStrategy(),
-            Config.getAllowedInfluxDbFieldsPredicate());
+        return new TagProperties(
+                null, Config.getLimitingStrategy(), Config.getAllowedInfluxDbFieldsPredicate());
     }
 
     public String getMac() {
@@ -42,7 +44,6 @@ public class TagProperties {
     public static Builder builder(final String mac) {
         return new Builder(mac);
     }
-
 
     public static class Builder {
         private String mac;
@@ -68,8 +69,10 @@ public class TagProperties {
         }
 
         public TagProperties build() {
-            return new TagProperties(mac, limitingStrategy,
-                Config.createInfluxDbFieldFilter(storageValues, storageValuesList));
+            return new TagProperties(
+                    mac,
+                    limitingStrategy,
+                    Config.createInfluxDbFieldFilter(storageValues, storageValuesList));
         }
     }
 }

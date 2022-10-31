@@ -1,37 +1,39 @@
 package fi.tkgwf.ruuvi.config;
 
-import fi.tkgwf.ruuvi.strategy.impl.DefaultDiscardingWithMotionSensitivityStrategy;
-import fi.tkgwf.ruuvi.strategy.impl.DiscardUntilEnoughTimeHasElapsedStrategy;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.net.URISyntaxException;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import fi.tkgwf.ruuvi.strategy.impl.DefaultDiscardingWithMotionSensitivityStrategy;
+import fi.tkgwf.ruuvi.strategy.impl.DiscardUntilEnoughTimeHasElapsedStrategy;
+import java.io.File;
+import java.net.URISyntaxException;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 public class ConfigTest {
 
     public static Function<String, File> configTestFileFinder() {
-        return propertiesFileName -> Optional.ofNullable(Config.class.getResource(String.format("/%s", propertiesFileName)))
-            .map(url -> {
-                try {
-                    return url.toURI();
-                } catch (final URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
-            })
-            .map(File::new)
-            .orElse(null);
+        return propertiesFileName ->
+                Optional.ofNullable(
+                                Config.class.getResource(String.format("/%s", propertiesFileName)))
+                        .map(
+                                url -> {
+                                    try {
+                                        return url.toURI();
+                                    } catch (final URISyntaxException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                })
+                        .map(File::new)
+                        .orElse(null);
     }
 
     @BeforeEach
@@ -81,7 +83,8 @@ public class ConfigTest {
 
     @Test
     void testOverriddenDoubleValues() {
-        assertEquals(Double.valueOf(0.06d), Config.getDefaultWithMotionSensitivityStrategyThreshold());
+        assertEquals(
+                Double.valueOf(0.06d), Config.getDefaultWithMotionSensitivityStrategyThreshold());
     }
 
     @Test
@@ -104,8 +107,12 @@ public class ConfigTest {
 
     @Test
     void testLimitingStrategyPerMac() {
-        assertTrue(Config.getLimitingStrategy("ABCDEF012345") instanceof DiscardUntilEnoughTimeHasElapsedStrategy);
-        assertTrue(Config.getLimitingStrategy("F1E2D3C4B5A6") instanceof DefaultDiscardingWithMotionSensitivityStrategy);
+        assertTrue(
+                Config.getLimitingStrategy("ABCDEF012345")
+                        instanceof DiscardUntilEnoughTimeHasElapsedStrategy);
+        assertTrue(
+                Config.getLimitingStrategy("F1E2D3C4B5A6")
+                        instanceof DefaultDiscardingWithMotionSensitivityStrategy);
 
         assertNull(Config.getLimitingStrategy("unknown should get null"));
     }
@@ -179,7 +186,7 @@ public class ConfigTest {
         assertTrue(Config.isAllowedMAC("ABCDEFG"));
         assertFalse(Config.isAllowedMAC(null));
 
-         //Change to named
+        // Change to named
         final Properties properties = new Properties();
         properties.put("filter.mode", "named");
         Config.readConfigFromProperties(properties);

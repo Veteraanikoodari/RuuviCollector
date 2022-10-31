@@ -15,10 +15,10 @@ For maximum accuracy, the update interval should be configured to 0 to save ever
 ### Data format compatibility
 
 Note: Extended values are enabled by default but can be disabled by setting `storage.values=raw` if only actual values from the tag are needed.
-Alternatively, if you want more fine-grained control, you may set `storage.values` either to `whitelist` or `blacklist` and then set another 
+Alternatively, if you want more fine-grained control, you may set `storage.values` either to `whitelist` or `blacklist` and then set another
 property, `storage.values.list`, to a list of fields to include or exclude, respectively.
-See [ruuvi-collector.properties.example](./ruuvi-collector.properties.example) for a practical example on how to disable 
-all fields related to acceleration in case your tag is stationary and recording acceleration readings would be pointless. 
+See [ruuvi-collector.properties.example](./ruuvi-collector.properties.example) for a practical example on how to disable
+all fields related to acceleration in case your tag is stationary and recording acceleration readings would be pointless.
 For the purposes of blacklisting or whitelisting the values, the table below displays the field names in the last column.
 
 | Type                            | Unit (saved)         | Data format 2 | Data format 3 | Data format 4 | Data format 5 | Field name                                                             |

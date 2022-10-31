@@ -3,7 +3,7 @@ package fi.tkgwf.ruuvi.db;
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import org.apache.log4j.Logger;
 
-public class DummyDBConnection implements DBConnection {
+public class DummyDBConnection implements RuuviDBConnection {
 
     private static final Logger LOG = Logger.getLogger(DummyDBConnection.class);
 
@@ -13,6 +13,5 @@ public class DummyDBConnection implements DBConnection {
     }
 
     @Override
-    public void close() {
-    }
+    public void close() {}
 }

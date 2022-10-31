@@ -67,7 +67,7 @@ sudo setcap 'cap_net_raw,cap_net_admin+eip' `which hcidump`
 ```
 
 -   Run the built JAR-file with `java -jar ruuvi-collector-*.jar`
-    -   Note: it's recommended to run this for example inside _screen_ to avoid the application being killed when terminal session ends
+	-   Note: it's recommended to run this for example inside _screen_ to avoid the application being killed when terminal session ends
 -   To configure the settings, copy the `ruuvi-collector.properties.example` to `ruuvi-collector.properties` and place it in the same directory as the JAR file and edit the file according to your needs.
 
 ### Configuration
