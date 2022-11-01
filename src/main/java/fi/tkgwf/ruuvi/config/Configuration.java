@@ -46,6 +46,7 @@ public class Configuration {
         public String user;
         public String pwd;
         public boolean createTables;
+        public int batchSize;
     }
 
     public static class InfluxDB {

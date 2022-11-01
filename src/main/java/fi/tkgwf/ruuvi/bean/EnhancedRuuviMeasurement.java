@@ -1,6 +1,9 @@
 package fi.tkgwf.ruuvi.bean;
 
 import fi.tkgwf.ruuvi.common.bean.RuuviMeasurement;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class contains all the possible fields/data acquirable from a RuuviTag in a "human format",
@@ -27,6 +30,8 @@ public class EnhancedRuuviMeasurement extends RuuviMeasurement {
         this.setMovementCounter(m.getMovementCounter());
         this.setMeasurementSequenceNumber(m.getMeasurementSequenceNumber());
     }
+
+    private static Map<String, Method> nameToGetter;
 
     /** Timestamp in milliseconds, normally not populated to use local time */
     private Long time;
@@ -157,6 +162,26 @@ public class EnhancedRuuviMeasurement extends RuuviMeasurement {
 
     public void setAirDensity(Double airDensity) {
         this.airDensity = airDensity;
+    }
+
+    public Object getFieldValue(String fieldName) {
+        try {
+            return nameToGetter.get(fieldName).invoke(this);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void enableCallFieldGetterByMethodName() {
+
+        nameToGetter = new HashMap<>();
+        for (Method m : EnhancedRuuviMeasurement.class.getMethods()) {
+            if (!Void.class.equals(m.getReturnType())) {
+                String name = m.getName().replace("get", "");
+                name = Character.toLowerCase(name.charAt(0)) + name.substring(1);
+                nameToGetter.put(name, m);
+            }
+        }
     }
 
     @Override
