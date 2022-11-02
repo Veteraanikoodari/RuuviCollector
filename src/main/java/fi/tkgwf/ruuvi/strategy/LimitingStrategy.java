@@ -7,6 +7,7 @@ import java.util.function.Function;
 public interface LimitingStrategy
         extends Function<EnhancedRuuviMeasurement, Optional<EnhancedRuuviMeasurement>> {
 
+    LimitingStrategy DEFAULT = measurement -> Optional.empty();
     /**
      * Applies a limiting strategy to the given measurement.
      *

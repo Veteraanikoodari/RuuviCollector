@@ -38,7 +38,7 @@ class PersistenceServiceTest {
         final BeaconHandler handler = new BeaconHandler();
         final MockConnection mockConnection = new MockConnection();
         final LimitingStrategy testingStrategy = new TestingStrategy();
-        final PersistenceService service = new PersistenceService(mockConnection, testingStrategy);
+        final PersistenceService service = new PersistenceService(mockConnection);
 
         service.store(withRssi(handler.handle(hciData).get(), 1));
         service.store(withRssi(handler.handle(hciData).get(), 2));
@@ -70,7 +70,7 @@ class PersistenceServiceTest {
 
         final MockConnection mockConnection = new MockConnection();
         final LimitingStrategy testingStrategy = new TestingStrategy();
-        final PersistenceService service = new PersistenceService(mockConnection, testingStrategy);
+        final PersistenceService service = new PersistenceService(mockConnection);
 
         final HCIData hciData = new HCIParser().readLine(TestFixture.getDataFormat3Message());
         hciData.mac = "ABCDEF012345";

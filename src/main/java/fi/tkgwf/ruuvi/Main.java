@@ -2,6 +2,7 @@ package fi.tkgwf.ruuvi;
 
 import fi.tkgwf.ruuvi.bean.HCIData;
 import fi.tkgwf.ruuvi.config.Config;
+import fi.tkgwf.ruuvi.config.Configuration;
 import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import fi.tkgwf.ruuvi.service.PersistenceService;
 import fi.tkgwf.ruuvi.utils.HCIParser;
@@ -104,8 +105,8 @@ public class Main {
                     if (Utils.hasMacAddress(line)) {
                         latestMAC = Utils.getMacFromLine(line);
                     }
-                    // Apply Mac Address Filtering
-                    if (Config.isAllowedMAC(latestMAC)) {
+                    // TODO Apply Mac Address Filtering
+                    if (Configuration.get().sensor.isAllowedMac(latestMAC)) {
                         HCIData hciData = parser.readLine(line);
                         if (hciData != null) {
                             beaconHandler
@@ -123,7 +124,7 @@ public class Main {
                             "Database connection lost while attempting to save measurements to"
                                     + " InfluxDB",
                             ex);
-                    if (Config.exitOnInfluxDBIOException()) {
+                    if (Configuration.get().influxCommon.exitOnInfluxDBIOException) {
                         return false;
                     }
                 } catch (Exception ex) {

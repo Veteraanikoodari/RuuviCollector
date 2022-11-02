@@ -4,6 +4,7 @@ import fi.tkgwf.ruuvi.utils.Utils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Configuration {
 
@@ -33,6 +34,10 @@ public class Configuration {
         public double motionSensitivityStrategyThreshold;
         public int motionSensitivityStrategyNumberOfPreviousMeasurementsToKeep;
         public Map<String, String> macAddressToName;
+        public Set<String> allowedMac = Set.of();
+        public boolean isAllowedMac(String mac) {
+            return allowedMac.isEmpty() || allowedMac.contains(mac);
+        }
     }
 
     public static class Storage {
@@ -69,7 +74,7 @@ public class Configuration {
         public boolean batch;
         public boolean exitOnInfluxDBIOException;
         public int batchMaxSize;
-        public long batchMaxTimeMs;
+        public int batchMaxTimeMs;
     }
 
     public static class Prometheus {

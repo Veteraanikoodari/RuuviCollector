@@ -1,13 +1,13 @@
 package fi.tkgwf.ruuvi.config;
 
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
-
 import fi.tkgwf.ruuvi.db.*;
 import fi.tkgwf.ruuvi.strategy.LimitingStrategy;
 import fi.tkgwf.ruuvi.strategy.impl.DefaultDiscardingWithMotionSensitivityStrategy;
 import fi.tkgwf.ruuvi.strategy.impl.DiscardUntilEnoughTimeHasElapsedStrategy;
-import fi.tkgwf.ruuvi.utils.InfluxDBConverter;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,10 +18,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+
+import static java.util.stream.Collectors.toSet;
 
 public abstract class Config {
 
@@ -33,9 +31,6 @@ public abstract class Config {
     private static final String DEFAULT_DUMP_COMMAND = "hcidump --raw";
 
     private static String influxUrl;
-    private static String influxToken;
-    private static String influxOrg;
-    private static String influxBucket;
     private static String influxDatabase;
     private static String influxMeasurement;
     private static String influxUser;
@@ -50,7 +45,6 @@ public abstract class Config {
     private static String storageMethod;
     private static String storageValues;
     private static final Set<String> FILTER_INFLUXDB_FIELDS = new HashSet<>();
-    private static Predicate<String> influxDbFieldFilter;
     private static Predicate<String> filterMode;
     private static final Set<String> FILTER_MACS = new HashSet<>();
     private static final Map<String, String> TAG_NAMES = new HashMap<>();
@@ -63,7 +57,6 @@ public abstract class Config {
     private static LimitingStrategy limitingStrategy;
     private static Double defaultWithMotionSensitivityStrategyThreshold;
     private static int defaultWithMotionSensitivityStrategyNumberOfPreviousMeasurementsToKeep;
-    private static Map<String, TagProperties> tagProperties;
     private static Function<String, File> configFileFinder;
     private static int prometheusHttpPort;
 
@@ -88,9 +81,6 @@ public abstract class Config {
         influxMeasurement = "ruuvi_measurements";
         influxUser = "ruuvi";
         influxPassword = "ruuvi";
-        influxToken = "ruuvi";
-        influxOrg = "ruuvi";
-        influxBucket = "ruuvi";
         influxRetentionPolicy = "autogen";
         influxGzip = true;
         influxBatch = true;
@@ -101,7 +91,6 @@ public abstract class Config {
         storageMethod = "influxdb";
         storageValues = "extended";
         FILTER_INFLUXDB_FIELDS.clear();
-        influxDbFieldFilter = (s) -> true;
         filterMode = (s) -> true;
         FILTER_MACS.clear();
         TAG_NAMES.clear();
@@ -112,7 +101,6 @@ public abstract class Config {
         limitingStrategy = new DiscardUntilEnoughTimeHasElapsedStrategy();
         defaultWithMotionSensitivityStrategyThreshold = 0.05;
         defaultWithMotionSensitivityStrategyNumberOfPreviousMeasurementsToKeep = 3;
-        tagProperties = new HashMap<>();
         prometheusHttpPort = 9155;
     }
 
@@ -138,14 +126,10 @@ public abstract class Config {
         influxMeasurement = props.getProperty("influxMeasurement", influxMeasurement);
         influxUser = props.getProperty("influxUser", influxUser);
         influxPassword = props.getProperty("influxPassword", influxPassword);
-        influxToken = props.getProperty("influxToken", influxToken);
-        influxOrg = props.getProperty("influxOrg", influxOrg);
-        influxBucket = props.getProperty("influxBucket", influxBucket);
         measurementUpdateLimit = parseLong(props, "measurementUpdateLimit", measurementUpdateLimit);
         storageMethod = props.getProperty("storage.method", storageMethod);
         storageValues = props.getProperty("storage.values", storageValues);
         FILTER_INFLUXDB_FIELDS.addAll(parseFilterInfluxDbFields(props));
-        influxDbFieldFilter = createInfluxDbFieldFilter();
         filterMode = parseFilterMode(props);
         FILTER_MACS.addAll(parseFilterMacs(props));
         receiver = props.getProperty("receiver", "");
@@ -169,70 +153,7 @@ public abstract class Config {
                         props,
                         "limitingStrategy.defaultWithMotionSensitivity.numberOfMeasurementsToKeep",
                         defaultWithMotionSensitivityStrategyNumberOfPreviousMeasurementsToKeep);
-        tagProperties = parseTagProperties(props);
         prometheusHttpPort = parseInteger(props, "prometheusHttpPort", prometheusHttpPort);
-        validateConfig();
-    }
-
-    private static void validateConfig() {
-        if (FILTER_INFLUXDB_FIELDS.isEmpty()) {
-            switch (storageValues) {
-                case "whitelist":
-                    throw new IllegalStateException(
-                            "You have selected no fields to be stored into the InfluxDB. Please set"
-                                + " the storage.values.list property or select another"
-                                + " storage.values option. See MEASUREMENTS.md for the available"
-                                + " fields and ruuvi-collector.properties.example for the possible"
-                                + " values of the storage.values property.");
-                case "blacklist":
-                    LOG.warn(
-                            "You have set storage.values=blacklist but left storage.values.list"
-                                + " empty. This is essentially the same as setting"
-                                + " storage.values=extended. If this is intentional, you may ignore"
-                                + " this message.");
-                    break;
-            }
-        }
-    }
-
-    private static Predicate<String> createInfluxDbFieldFilter() {
-        return createInfluxDbFieldFilter(storageValues, FILTER_INFLUXDB_FIELDS);
-    }
-
-    static Predicate<String> createInfluxDbFieldFilter(
-            final String value, final Collection<String> list) {
-        switch (Optional.ofNullable(value).orElse("extended")) {
-            case "raw":
-                return InfluxDBConverter.RAW_STORAGE_VALUES::contains;
-            case "extended":
-                return s -> true;
-            case "whitelist":
-                return list::contains;
-            case "blacklist":
-                return s -> !list.contains(s);
-            default:
-                LOG.warn("Unknown storage.values value: " + value);
-                return s -> true;
-        }
-    }
-
-    private static Map<String, TagProperties> parseTagProperties(final Properties props) {
-        final Map<String, Map<String, String>> tagProps =
-                props.entrySet().stream()
-                        .map(e -> Pair.of(String.valueOf(e.getKey()), String.valueOf(e.getValue())))
-                        .filter(p -> p.getLeft().startsWith("tag."))
-                        .collect(
-                                Collectors.groupingBy(
-                                        extractMacAddressFromTagPropertyName(),
-                                        toMap(extractKeyFromTagPropertyName(), Pair::getRight)));
-        return tagProps.entrySet().stream()
-                .map(
-                        e -> {
-                            final TagProperties.Builder builder = TagProperties.builder(e.getKey());
-                            e.getValue().forEach(builder::add);
-                            return builder.build();
-                        })
-                .collect(Collectors.toMap(TagProperties::getMac, t -> t));
     }
 
     private static Function<Pair<String, String>, String> extractKeyFromTagPropertyName() {
@@ -391,109 +312,6 @@ public abstract class Config {
         }
     }
 
-    public static RuuviDBConnection getDBConnection() {
-        if (ruuviDbConnection == null) {
-            ruuviDbConnection = createDBConnection();
-        }
-        return ruuviDbConnection;
-    }
-
-    private static RuuviDBConnection createDBConnection() {
-        LOG.info("Creating database connection for storageMethod: " + storageMethod);
-        switch (storageMethod) {
-            case "influxdb":
-                return new InfluxDBConnection();
-            case "influxdb2":
-                return new InfluxDB2Connection();
-            case "prometheus":
-                return new PrometheusExporter(getPrometheusHttpPort());
-            case "dummy":
-                return new DummyDBConnection();
-            default:
-                try {
-                    LOG.info("Trying to use custom DB dbConnection class: " + storageMethod);
-                    return (RuuviDBConnection) Class.forName(storageMethod).newInstance();
-                } catch (final Exception e) {
-                    throw new IllegalArgumentException(
-                            "Invalid storage method: " + storageMethod, e);
-                }
-        }
-    }
-
-    public static Predicate<String> getAllowedInfluxDbFieldsPredicate() {
-        return influxDbFieldFilter;
-    }
-
-    public static Predicate<String> getAllowedInfluxDbFieldsPredicate(String mac) {
-        return Optional.ofNullable(tagProperties.get(mac))
-                .map(TagProperties::getInfluxDbFieldFilter)
-                .orElse(influxDbFieldFilter);
-    }
-
-    public static String getInfluxUrl() {
-        return influxUrl;
-    }
-
-    public static String getInfluxDatabase() {
-        return influxDatabase;
-    }
-
-    public static String getInfluxMeasurement() {
-        return influxMeasurement;
-    }
-
-    public static String getInfluxUser() {
-        return influxUser;
-    }
-
-    public static String getInfluxPassword() {
-        return influxPassword;
-    }
-
-    public static String getInfluxToken() {
-        return influxToken;
-    }
-
-    public static String getInfluxOrg() {
-        return influxOrg;
-    }
-
-    public static String getInfluxBucket() {
-        return influxBucket;
-    }
-
-    public static String getInfluxRetentionPolicy() {
-        return influxRetentionPolicy;
-    }
-
-    public static boolean isInfluxGzip() {
-        return influxGzip;
-    }
-
-    public static boolean isInfluxBatch() {
-        return influxBatch;
-    }
-
-    public static boolean exitOnInfluxDBIOException() {
-        return exitOnInfluxDBIOException;
-    }
-
-    public static int getInfluxBatchMaxSize() {
-        return influxBatchMaxSize;
-    }
-
-    public static int getInfluxBatchMaxTimeMs() {
-        return influxBatchMaxTimeMs;
-    }
-
-    public static long getMeasurementUpdateLimit() {
-        return measurementUpdateLimit;
-    }
-
-    public static boolean isAllowedMAC(String mac) {
-        return mac != null && filterMode.test(mac);
-    }
-
     public static String getReceiver() {
         return receiver;
     }
@@ -520,19 +338,5 @@ public abstract class Config {
 
     public static LimitingStrategy getLimitingStrategy() {
         return limitingStrategy;
-    }
-
-    public static LimitingStrategy getLimitingStrategy(String mac) {
-        return Optional.ofNullable(tagProperties.get(mac))
-                .map(TagProperties::getLimitingStrategy)
-                .orElse(null);
-    }
-
-    public static Double getDefaultWithMotionSensitivityStrategyThreshold() {
-        return defaultWithMotionSensitivityStrategyThreshold;
-    }
-
-    public static int getDefaultWithMotionSensitivityStrategyNumberOfPreviousMeasurementsToKeep() {
-        return defaultWithMotionSensitivityStrategyNumberOfPreviousMeasurementsToKeep;
     }
 }

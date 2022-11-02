@@ -3,16 +3,21 @@ package fi.tkgwf.ruuvi.utils;
 import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
-import fi.tkgwf.ruuvi.config.Config;
+//import fi.tkgwf.ruuvi.config.Config;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import fi.tkgwf.ruuvi.config.Configuration;
 import org.apache.commons.lang3.StringUtils;
 
 public class InfluxDB2Converter {
     public static final Collection<String> RAW_STORAGE_VALUES;
+
+    private static final Predicate<String> FIELD_FILTER = s -> Configuration.get().storage.fields.contains(s);
+
 
     static {
         final Collection<String> rawStorageValues = new HashSet<>();
@@ -31,8 +36,7 @@ public class InfluxDB2Converter {
     }
 
     public static Point toInflux(EnhancedRuuviMeasurement measurement) {
-        return toInflux(
-                measurement, Config.getAllowedInfluxDbFieldsPredicate(measurement.getMac()));
+        return toInflux(measurement, FIELD_FILTER);
     }
 
     public static Point toInflux(EnhancedRuuviMeasurement measurement, boolean extended) {
@@ -53,7 +57,7 @@ public class InfluxDB2Converter {
     public static Point toInflux(
             EnhancedRuuviMeasurement measurement, Predicate<String> allowField) {
         Point p =
-                Point.measurement(Config.getInfluxMeasurement())
+                Point.measurement(Configuration.get().influxCommon.measurement)
                         .addTag("mac", measurement.getMac());
 
         if (measurement.getName() != null) {
