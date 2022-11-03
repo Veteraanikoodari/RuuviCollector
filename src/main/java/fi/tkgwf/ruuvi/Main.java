@@ -1,7 +1,6 @@
 package fi.tkgwf.ruuvi;
 
 import fi.tkgwf.ruuvi.bean.HCIData;
-import fi.tkgwf.ruuvi.config.Config;
 import fi.tkgwf.ruuvi.config.Configuration;
 import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import fi.tkgwf.ruuvi.service.PersistenceService;
@@ -35,7 +34,7 @@ public class Main {
     }
 
     private BufferedReader startHciListeners() throws IOException {
-        String[] scan = Config.getScanCommand();
+        String[] scan = Configuration.get().sensor.scanCommand.split(" ");
         if (scan.length > 0 && StringUtils.isNotBlank(scan[0])) {
             Process hcitool = new ProcessBuilder(scan).start();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> hcitool.destroyForcibly()));
@@ -43,9 +42,10 @@ public class Main {
         } else {
             LOG.debug("Skipping scan command, scan command is blank.");
         }
-        Process hcidump = new ProcessBuilder(Config.getDumpCommand()).start();
+        String[] dump = Configuration.get().sensor.dumpCommand.split(" ");
+        Process hcidump = new ProcessBuilder(dump).start();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> hcidump.destroyForcibly()));
-        LOG.debug("Starting dump with: " + Arrays.toString(Config.getDumpCommand()));
+        LOG.debug("Starting dump with: " + Configuration.get().sensor.dumpCommand);
         return new BufferedReader(new InputStreamReader(hcidump.getInputStream()));
     }
 

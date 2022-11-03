@@ -3,12 +3,15 @@ sensor:
     measurementUpdateLimitMs: 9900
     motionSensitivityStrategyThreshold: 0.05
     motionSensitivityStrategyNumberOfPreviousMeasurementsToKeep: 3
+    scanCommand: "hcitool lescan --duplicates --passive"
+    dumpCommand: "hcidump --raw"
     # <macAddress, name> map to differentiate sensors in human-readable way
     macAddressToName:
         A1:A1:A1:A1:A1:A1: "mySensor"
         A2:A2:A2:A2:A2:A2: "myOtherSensor"
 
 storage:
+    receiver:
     # default storage method is timescaleDB
     method: "timescaleDB"
     # All the available fields/values from ruuviTag sensor.

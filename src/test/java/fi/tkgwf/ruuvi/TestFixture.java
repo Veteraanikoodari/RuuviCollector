@@ -1,7 +1,8 @@
 package fi.tkgwf.ruuvi;
 
-import fi.tkgwf.ruuvi.config.Config;
-import java.lang.reflect.Field;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.function.Supplier;
 
 public class TestFixture {
@@ -110,9 +111,8 @@ public class TestFixture {
 
     public static void setClockToMilliseconds(final Supplier<Long> timestampSupplier) {
         try {
-            final Field clock = Config.class.getDeclaredField("timestampProvider");
-            clock.setAccessible(true);
-            clock.set(null, timestampSupplier);
+            // TODO when testing is reimplemented.
+            var clock = Clock.fixed(Instant.ofEpochMilli(timestampSupplier.get()), ZoneId.systemDefault());
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }

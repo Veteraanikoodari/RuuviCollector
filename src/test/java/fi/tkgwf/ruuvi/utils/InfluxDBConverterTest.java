@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
-import fi.tkgwf.ruuvi.config.Config;
-import fi.tkgwf.ruuvi.config.ConfigTest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,16 +16,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class InfluxDBConverterTest {
-
-    @BeforeEach
-    void resetConfigBefore() {
-        Config.reload(ConfigTest.configTestFileFinder());
-    }
-
-    @AfterAll
-    static void resetConfigAfter() {
-        Config.reload(ConfigTest.configTestFileFinder());
-    }
 
     @Test
     void toInfluxShouldGiveExtendedValues() {
@@ -70,7 +58,6 @@ class InfluxDBConverterTest {
                 "accelerationX,accelerationY,accelerationZ");
         props.put("tag.CCCCCCCCCCCC.storage.values", "whitelist");
         props.put("tag.CCCCCCCCCCCC.storage.values.list", "temperature,humidity");
-        Config.readConfigFromProperties(props);
 
         final EnhancedRuuviMeasurement measurement = createMeasurement();
         final Point point = InfluxDBConverter.toInflux(measurement);

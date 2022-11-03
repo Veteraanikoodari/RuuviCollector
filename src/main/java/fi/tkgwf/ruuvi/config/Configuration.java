@@ -33,6 +33,8 @@ public class Configuration {
         public long measurementUpdateLimitMs;
         public double motionSensitivityStrategyThreshold;
         public int motionSensitivityStrategyNumberOfPreviousMeasurementsToKeep;
+        public String scanCommand;
+        public String dumpCommand;
         public Map<String, String> macAddressToName;
         public Set<String> allowedMac = Set.of();
         public boolean isAllowedMac(String mac) {
@@ -41,6 +43,7 @@ public class Configuration {
     }
 
     public static class Storage {
+        public String receiver;
         public String method;
         public List<String> fields;
     }

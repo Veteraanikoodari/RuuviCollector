@@ -25,8 +25,7 @@ public class TagProperties {
             final String mac,
             final LimitingStrategy limitingStrategy) {
         this.mac = mac;
-        this.limitingStrategy =
-                Optional.ofNullable(limitingStrategy).orElse(Config.getLimitingStrategy());
+        this.limitingStrategy = limitingStrategy;
     }
 
     public String getMac() {

@@ -5,7 +5,6 @@ import fi.tkgwf.ruuvi.bean.HCIData;
 import fi.tkgwf.ruuvi.common.bean.RuuviMeasurement;
 import fi.tkgwf.ruuvi.common.parser.DataFormatParser;
 import fi.tkgwf.ruuvi.common.parser.impl.AnyDataFormatParser;
-import fi.tkgwf.ruuvi.config.Config;
 import fi.tkgwf.ruuvi.config.Configuration;
 import java.util.Optional;
 import org.apache.log4j.Logger;
@@ -52,7 +51,7 @@ public class BeaconHandler {
             enhancedMeasurement.setMac(hciData.mac);
             enhancedMeasurement.setRssi(hciData.rssi);
             enhancedMeasurement.setName(cfg.sensor.macAddressToName.get(hciData.mac));
-            enhancedMeasurement.setReceiver(Config.getReceiver());
+            enhancedMeasurement.setReceiver(Configuration.get().storage.receiver);
             return Optional.of(enhancedMeasurement);
         }
         LOG.error("Data format 5 (RAWv2) is only supported format.");

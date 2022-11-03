@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import fi.tkgwf.ruuvi.TestFixture;
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.bean.HCIData;
-import fi.tkgwf.ruuvi.config.Config;
-import fi.tkgwf.ruuvi.config.ConfigTest;
 import fi.tkgwf.ruuvi.db.RuuviDBConnection;
 import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import fi.tkgwf.ruuvi.strategy.LimitingStrategy;
@@ -21,16 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class PersistenceServiceTest {
-
-    @BeforeEach
-    void resetConfigBefore() {
-        Config.reload(ConfigTest.configTestFileFinder());
-    }
-
-    @AfterAll
-    static void resetConfigAfter() {
-        Config.reload(ConfigTest.configTestFileFinder());
-    }
 
     @Test
     void testApplyingCustomLimitingStrategy() {
@@ -66,7 +54,6 @@ class PersistenceServiceTest {
         final Properties properties = new Properties();
         properties.put("filter.mode", "whitelist");
         properties.put("tag.F1E2D3C4B5A6.limitingStrategy", "onMovement");
-        Config.readConfigFromProperties(properties);
 
         final MockConnection mockConnection = new MockConnection();
         final LimitingStrategy testingStrategy = new TestingStrategy();

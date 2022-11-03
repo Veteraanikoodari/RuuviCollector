@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
-import fi.tkgwf.ruuvi.config.Config;
-import fi.tkgwf.ruuvi.config.ConfigTest;
 import fi.tkgwf.ruuvi.db.RuuviDBConnection;
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -15,19 +13,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class MainTest {
 
-    @BeforeEach
-    void resetConfigBefore() {
-        Config.reload(ConfigTest.configTestFileFinder());
-    }
-
     @AfterAll
     static void restoreClock() {
-        Config.reload(ConfigTest.configTestFileFinder());
         TestFixture.setClockToMilliseconds(System::currentTimeMillis);
     }
 

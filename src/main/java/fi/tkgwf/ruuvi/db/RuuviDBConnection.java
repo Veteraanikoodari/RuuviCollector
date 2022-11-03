@@ -1,13 +1,12 @@
 package fi.tkgwf.ruuvi.db;
 
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
-import fi.tkgwf.ruuvi.config.Config;
 import fi.tkgwf.ruuvi.config.Configuration;
 import org.apache.log4j.Logger;
 
 public interface RuuviDBConnection {
 
-    Logger LOG = Logger.getLogger(Config.class);
+    Logger LOG = Logger.getLogger(RuuviDBConnection.class);
 
     static RuuviDBConnection createDBConnection() {
         var method = Configuration.get().storage.method;
