@@ -10,7 +10,7 @@ public class InfluxDB2Connection implements RuuviDBConnection {
     private final InfluxDBClient client;
     private final WriteApiBlocking writeApiBlocking;
     private final WriteApi writeApi;
-    private final static Configuration cfg = Configuration.get();
+    private static final Configuration cfg = Configuration.get();
 
     public InfluxDB2Connection() {
         this(

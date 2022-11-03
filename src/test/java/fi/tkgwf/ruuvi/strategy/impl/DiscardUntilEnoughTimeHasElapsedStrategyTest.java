@@ -9,7 +9,6 @@ import fi.tkgwf.ruuvi.bean.HCIData;
 import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import fi.tkgwf.ruuvi.utils.HCIParser;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class DiscardUntilEnoughTimeHasElapsedStrategyTest {

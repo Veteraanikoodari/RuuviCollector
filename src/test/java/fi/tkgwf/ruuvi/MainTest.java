@@ -62,7 +62,8 @@ class MainTest {
 
         // Assert that only the expected measurements were persisted:
 
-        final MockConnection mockConnection = (MockConnection) RuuviDBConnection.createDBConnection();
+        final MockConnection mockConnection =
+                (MockConnection) RuuviDBConnection.createDBConnection();
         assertEquals(3, mockConnection.getMeasurements().size());
         assertEquals(1, mockConnection.getMeasurements().get(0).getRssi().intValue());
         assertEquals(3, mockConnection.getMeasurements().get(1).getRssi().intValue());

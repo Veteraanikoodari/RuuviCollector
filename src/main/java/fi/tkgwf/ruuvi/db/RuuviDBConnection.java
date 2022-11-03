@@ -32,8 +32,6 @@ public interface RuuviDBConnection {
      */
     void save(EnhancedRuuviMeasurement measurement);
 
-    /**
-     * Closes the DB connection
-     */
+    /** Closes the DB connection */
     void close();
 }

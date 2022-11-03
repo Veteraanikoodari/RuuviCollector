@@ -12,11 +12,11 @@ public class InfluxDBConnection implements RuuviDBConnection {
 
     private final InfluxDB influxDB;
 
-    private final static Configuration cfg = Configuration.get();
+    private static final Configuration cfg = Configuration.get();
 
     public InfluxDBConnection() {
         this(
-            cfg.influxCommon.url,
+                cfg.influxCommon.url,
                 cfg.influxDB.user,
                 cfg.influxDB.pwd,
                 cfg.influxDB.database,

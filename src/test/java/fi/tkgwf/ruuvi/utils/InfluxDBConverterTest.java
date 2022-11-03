@@ -11,8 +11,6 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.function.Predicate;
 import org.influxdb.dto.Point;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class InfluxDBConverterTest {

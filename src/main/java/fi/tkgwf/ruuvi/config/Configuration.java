@@ -37,6 +37,7 @@ public class Configuration {
         public String dumpCommand;
         public Map<String, String> macAddressToName;
         public Set<String> allowedMac = Set.of();
+
         public boolean isAllowedMac(String mac) {
             return allowedMac.isEmpty() || allowedMac.contains(mac);
         }

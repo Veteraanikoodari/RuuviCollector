@@ -1,7 +1,7 @@
 package fi.tkgwf.ruuvi.utils;
 
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
-
+import fi.tkgwf.ruuvi.config.Configuration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import fi.tkgwf.ruuvi.config.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
@@ -19,8 +17,8 @@ import org.influxdb.dto.Point;
 public class InfluxDBConverter {
     public static final Collection<String> RAW_STORAGE_VALUES;
 
-    private static final Predicate<String> FIELD_FILTER = s -> Configuration.get().storage.fields.contains(s);
-
+    private static final Predicate<String> FIELD_FILTER =
+            s -> Configuration.get().storage.fields.contains(s);
 
     static {
         final Collection<String> rawStorageValues = new HashSet<>();
@@ -60,7 +58,8 @@ public class InfluxDBConverter {
     public static Point toInflux(
             EnhancedRuuviMeasurement measurement, Predicate<String> allowField) {
         Point.Builder p =
-                Point.measurement(Configuration.get().influxCommon.measurement).tag("mac", measurement.getMac());
+                Point.measurement(Configuration.get().influxCommon.measurement)
+                        .tag("mac", measurement.getMac());
         if (measurement.getName() != null) {
             p.tag("name", measurement.getName());
         }

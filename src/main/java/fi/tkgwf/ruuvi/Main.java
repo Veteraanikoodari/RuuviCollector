@@ -29,8 +29,11 @@ public class Main {
             System.exit(1);
         }
         LOG.info("Clean exit");
-        System.exit(0); // due to a bug in the InfluxDB library, we have to force the exit as a
+        // due to a bug in the InfluxDB library, we have to force the exit as a
         // workaround. See: https://github.com/influxdata/influxdb-java/issues/359
+        if (Configuration.get().storage.method.startsWith("influx")) {
+            System.exit(0);
+        }
     }
 
     private BufferedReader startHciListeners() throws IOException {

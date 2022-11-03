@@ -112,7 +112,9 @@ public class TestFixture {
     public static void setClockToMilliseconds(final Supplier<Long> timestampSupplier) {
         try {
             // TODO when testing is reimplemented.
-            var clock = Clock.fixed(Instant.ofEpochMilli(timestampSupplier.get()), ZoneId.systemDefault());
+            var clock =
+                    Clock.fixed(
+                            Instant.ofEpochMilli(timestampSupplier.get()), ZoneId.systemDefault());
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
