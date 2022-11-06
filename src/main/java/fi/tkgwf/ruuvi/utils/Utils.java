@@ -4,10 +4,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.apache.log4j.Logger;
+
 
 public abstract class Utils {
+
+    private static final Logger LOG = Logger.getLogger(BeaconHandler.class);
 
     /**
      * Converts a space-separated string of hex to ASCII
@@ -130,7 +136,8 @@ public abstract class Utils {
         var nameWithPath =
                 System.getProperty("user.dir") + "/" + clazz.getSimpleName().toLowerCase() + ".yml";
         var file = new File(nameWithPath);
-
+        LOG.info("Looking configuration from: " + file.getAbsolutePath());
+        LOG.info(file.isFile() ? "..found." : "..not found. Using defaults from resources.");
         try (var inputStream =
                 file.isFile()
                         ? new FileInputStream(file)
