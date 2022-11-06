@@ -1,15 +1,13 @@
 package fi.tkgwf.ruuvi.utils;
 
+import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
-import fi.tkgwf.ruuvi.handler.BeaconHandler;
+import org.apache.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
-import org.apache.log4j.Logger;
-
 
 public abstract class Utils {
 
