@@ -54,7 +54,7 @@ public class BeaconHandler {
             enhancedMeasurement.setReceiver(Configuration.get().storage.receiver);
             return Optional.of(enhancedMeasurement);
         }
-        LOG.error("Data format 5 (RAWv2) is only supported format.");
+        // LOG.error("Data format 5 (RAWv2) is only supported format.");
         return Optional.empty();
     }
 }

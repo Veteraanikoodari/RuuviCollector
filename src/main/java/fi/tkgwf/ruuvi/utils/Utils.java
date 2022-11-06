@@ -1,32 +1,13 @@
 package fi.tkgwf.ruuvi.utils;
 
-import fi.tkgwf.ruuvi.Main;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.util.Optional;
-import java.util.function.Function;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 public abstract class Utils {
-
-    private static final String mainFilePath;
-
-    static {
-        try {
-            mainFilePath =
-                    Main.class
-                            .getProtectionDomain()
-                            .getCodeSource()
-                            .getLocation()
-                            .toURI()
-                            .getPath();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * Converts a space-separated string of hex to ASCII
@@ -141,38 +122,27 @@ public abstract class Utils {
         return isMaxUnsignedByte(b1) && isMaxUnsignedByte(b2);
     }
 
-    public static void test() {}
-
     /**
      * Reads configuration for class from yml file which has the same name (in lowercase) as class
-     * simple name.
+     * simple name. First from working dir and then from resources
      */
     public static <T> T readYamlConfig(Class<T> clazz) throws IOException {
+        var nameWithPath =
+                System.getProperty("user.dir") + "/" + clazz.getSimpleName().toLowerCase() + ".yml";
+        var file = new File(nameWithPath);
 
-        try (InputStream inputStream =
-                com.sun.tools.javac.Main.class
-                        .getClassLoader()
-                        .getResourceAsStream(clazz.getSimpleName().toLowerCase() + ".yml")) {
+        try (var inputStream =
+                file.isFile()
+                        ? new FileInputStream(file)
+                        : getInputSreamFromResources(clazz.getSimpleName())) {
             Yaml yaml = new Yaml(new Constructor(clazz));
             return yaml.load(inputStream);
         }
     }
 
-    public static Function<String, File> findFile() {
-        return fileName -> {
-            final File jarLocation = new File(mainFilePath);
-            Optional<File> configFile = findFile(fileName, jarLocation);
-            if (configFile.isEmpty()) {
-                configFile = findFile(fileName, jarLocation.getParentFile());
-            }
-            return configFile.orElse(null);
-        };
-    }
-
-    private static Optional<File> findFile(String fileName, File parentFile) {
-        return Optional.ofNullable(
-                        parentFile.listFiles(f -> f.isFile() && f.getName().equals(fileName)))
-                .filter(files -> files.length > 0)
-                .map(files -> files[0]);
+    private static InputStream getInputSreamFromResources(String name) {
+        return com.sun.tools.javac.Main.class
+                .getClassLoader()
+                .getResourceAsStream(name.toLowerCase() + ".yml");
     }
 }

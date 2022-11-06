@@ -2,6 +2,7 @@ package fi.tkgwf.ruuvi.db;
 
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Configuration;
+import java.sql.SQLException;
 import org.apache.log4j.Logger;
 
 public interface RuuviDBConnection {
@@ -11,17 +12,25 @@ public interface RuuviDBConnection {
     static RuuviDBConnection createDBConnection() {
         var method = Configuration.get().storage.method;
         LOG.info("Creating database connection for storageMethod: " + method);
-        switch (method) {
-            case "influxdb":
-                return new InfluxDBConnection();
-            case "influxdb2":
-                return new InfluxDB2Connection();
-            case "prometheus":
-                return new PrometheusExporter(Configuration.get().prometheus.httpPort);
-            case "dummy":
-                return new DummyDBConnection();
-            default:
-                throw new IllegalArgumentException("Invalid storage method: " + method);
+        try {
+            switch (method) {
+                case "timescaleDB":
+                    return new TimescaleDBConnection();
+                case "influxdb":
+                    return new InfluxDBConnection();
+                case "influxdb2":
+                    return new InfluxDB2Connection();
+                case "prometheus":
+                    return new PrometheusExporter(Configuration.get().prometheus.httpPort);
+                case "dummy":
+                    return new DummyDBConnection();
+                default:
+                    throw new IllegalArgumentException("Invalid storage method: " + method);
+            }
+        } catch (SQLException e) {
+            LOG.error("Unable to configure storage method", e);
+            LOG.info("Switching to logging mode only");
+            return new DummyDBConnection();
         }
     }
 
