@@ -38,7 +38,6 @@ public class TimescaleDBConnection implements RuuviDBConnection {
         EnhancedRuuviMeasurement.enableCallFieldGetterByMethodName();
 
         LOG.info("Connecting to database..");
-        url = "jdbc:postgresql://192.168.1.28";
         con = DriverManager.getConnection(url + "/" + cfg.timescaleDB.database, user, pwd);
         LOG.info("..connected.");
         if (cfg.timescaleDB.createTables) {
