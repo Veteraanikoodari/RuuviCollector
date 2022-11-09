@@ -1,0 +1,6 @@
+version: '3'
+services:
+
+  ruuvijava:
+    image: eclipse-temurin:11.0.17_8-jdk
+    container_name: ruuvijava
