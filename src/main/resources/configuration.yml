@@ -7,8 +7,8 @@ sensor:
     dumpCommand: "hcidump --raw"
     # <macAddress, name> map to differentiate sensors in human-readable way
     macAddressToName:
-        A1:A1:A1:A1:A1:A1: "mySensor"
-        A2:A2:A2:A2:A2:A2: "myOtherSensor"
+        A1A1A1A1A1A1: "mySensor"
+        A2A2A2A2A2A2: "myOtherSensor"
 
     # mac address whitelist filtering
     allowedMac: { }

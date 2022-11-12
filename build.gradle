@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'fi.tkgwf.ruuvi'
-project.version = '0.2'
+project.version = '1.0.2'
 
 sourceCompatibility = '11'
 targetCompatibility = 11

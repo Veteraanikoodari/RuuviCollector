@@ -1,4 +1,4 @@
-FROM eclipse-temurin:11.0.17_8-jdk
+FROM eclipse-temurin:11.0.17_8-jre
 RUN apt-get update
 RUN apt-get -y install bluez
 RUN apt-get -y install bluez-hcidump

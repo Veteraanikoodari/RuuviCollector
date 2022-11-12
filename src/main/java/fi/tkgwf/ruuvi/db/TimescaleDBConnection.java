@@ -186,9 +186,9 @@ public class TimescaleDBConnection implements RuuviDBConnection {
             var sql =
                     "UPDATE "
                             + SENSOR
-                            + " SET name = "
+                            + " SET name = '"
                             + configuredName
-                            + " WHERE mac_address = '"
+                            + "' WHERE mac_address = '"
                             + macAddress
                             + "'";
             executeUpdate(sql);
