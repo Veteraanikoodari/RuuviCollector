@@ -1,30 +1,17 @@
 package fi.tkgwf.ruuvi.strategy.impl;
 
-import fi.tkgwf.ruuvi.TestFixture;
-import fi.tkgwf.ruuvi.bean.HCIData;
-import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
-import fi.tkgwf.ruuvi.config.Config;
-import fi.tkgwf.ruuvi.config.ConfigTest;
-import fi.tkgwf.ruuvi.handler.BeaconHandler;
-import fi.tkgwf.ruuvi.utils.HCIParser;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import fi.tkgwf.ruuvi.TestFixture;
+import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
+import fi.tkgwf.ruuvi.bean.HCIData;
+import fi.tkgwf.ruuvi.handler.BeaconHandler;
+import fi.tkgwf.ruuvi.utils.HCIParser;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
+
 class DiscardUntilEnoughTimeHasElapsedStrategyTest {
-
-    @BeforeEach
-    void resetConfigBefore() {
-        Config.reload(ConfigTest.configTestFileFinder());
-    }
-
-    @AfterAll
-    static void resetConfigAfter() {
-        Config.reload(ConfigTest.configTestFileFinder());
-    }
 
     @AfterAll
     static void restoreClock() {
@@ -40,7 +27,8 @@ class DiscardUntilEnoughTimeHasElapsedStrategyTest {
         setClockToMilliseconds(0);
         final BeaconHandler v3 = new BeaconHandler();
 
-        final DiscardUntilEnoughTimeHasElapsedStrategy strategy = new DiscardUntilEnoughTimeHasElapsedStrategy();
+        final DiscardUntilEnoughTimeHasElapsedStrategy strategy =
+                new DiscardUntilEnoughTimeHasElapsedStrategy();
         assertTrue(strategy.apply(withRssi(v3.handle(hciData).get(), 1)).isPresent());
         assertFalse(strategy.apply(withRssi(v3.handle(hciData).get(), 2)).isPresent());
         setClockToMilliseconds(1000);
@@ -60,7 +48,8 @@ class DiscardUntilEnoughTimeHasElapsedStrategyTest {
         assertTrue(strategy.apply(withRssi(v3.handle(hciData2).get(), 11)).isPresent());
     }
 
-    private static EnhancedRuuviMeasurement withRssi(final EnhancedRuuviMeasurement measurement, final int rssi) {
+    private static EnhancedRuuviMeasurement withRssi(
+            final EnhancedRuuviMeasurement measurement, final int rssi) {
         measurement.setRssi(rssi);
         return measurement;
     }

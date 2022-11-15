@@ -2,7 +2,7 @@
 
 When contributing to this repository, please first discuss the change you wish to make by creating a new Issue about it, if there is no issue about it already.
 
-Issues labeled as "help wanted" are good choices for contributions if you want to contribute but don't have any particular idea in mind. 
+Issues labeled as "help wanted" are good choices for contributions if you want to contribute but don't have any particular idea in mind.
 If there are no such issues open and you still want to contribute and don't have an idea in mind, you can open an issue about it and we'll figure out something cool for you to do. :)
 
 ## Code conventions

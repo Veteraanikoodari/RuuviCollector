@@ -5,9 +5,8 @@ import java.util.ArrayList;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * This class is capable of parsing the raw format dump from hcidump (output of
- * command "hcidump --raw"). This implementation is a state-machine, and thus
- * it's not thread safe.
+ * This class is capable of parsing the raw format dump from hcidump (output of command "hcidump
+ * --raw"). This implementation is a state-machine, and thus it's not thread safe.
  */
 public class HCIParser {
 
@@ -25,13 +24,12 @@ public class HCIParser {
     }
 
     /**
-     * Reads lines from hcidump raw output and returns a HCIData instance when
-     * it's ready. Long packets are split to multiple lines in the hcidump raw
-     * output.
+     * Reads lines from hcidump raw output and returns a HCIData instance when it's ready. Long
+     * packets are split to multiple lines in the hcidump raw output.
      *
      * @param line raw line from hcidump --raw output
-     * @return An instance of HCIData containing the parsed data from this line
-     * and the previous ones
+     * @return An instance of HCIData containing the parsed data from this line and the previous
+     *     ones
      */
     public HCIData readLine(String line) {
         if (StringUtils.isBlank(line)) {
@@ -46,7 +44,8 @@ public class HCIParser {
             sendingData = true;
         }
         if (sendingData) {
-            return null; // currently reading a packet that is being sent rather than received, ignore it
+            return null; // currently reading a packet that is being sent rather than received,
+            // ignore it
         }
         byte[] lineData = Utils.hexToBytes(line);
         int i = 0;

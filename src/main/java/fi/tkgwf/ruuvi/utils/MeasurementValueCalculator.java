@@ -5,21 +5,38 @@ import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 public class MeasurementValueCalculator {
 
     /**
-     * Calculates values that can be calculated based on other values, such as
-     * total acceleration and absolute humidity
+     * Calculates values that can be calculated based on other values, such as total acceleration
+     * and absolute humidity
      *
      * @param measurement the measurement
      * @return The supplied Measurement
      */
-    public static EnhancedRuuviMeasurement calculateAllValues(EnhancedRuuviMeasurement measurement) {
-        measurement.setAbsoluteHumidity(absoluteHumidity(measurement.getTemperature(), measurement.getHumidity()));
+    public static EnhancedRuuviMeasurement calculateAllValues(
+            EnhancedRuuviMeasurement measurement) {
+        measurement.setAbsoluteHumidity(
+                absoluteHumidity(measurement.getTemperature(), measurement.getHumidity()));
         measurement.setDewPoint(dewPoint(measurement.getTemperature(), measurement.getHumidity()));
-        measurement.setEquilibriumVaporPressure(equilibriumVaporPressure(measurement.getTemperature()));
-        measurement.setAirDensity(airDensity(measurement.getTemperature(), measurement.getHumidity(), measurement.getPressure()));
-        measurement.setAccelerationTotal(totalAcceleration(measurement.getAccelerationX(), measurement.getAccelerationY(), measurement.getAccelerationZ()));
-        measurement.setAccelerationAngleFromX(angleBetweenVectorComponentAndAxis(measurement.getAccelerationX(), measurement.getAccelerationTotal()));
-        measurement.setAccelerationAngleFromY(angleBetweenVectorComponentAndAxis(measurement.getAccelerationY(), measurement.getAccelerationTotal()));
-        measurement.setAccelerationAngleFromZ(angleBetweenVectorComponentAndAxis(measurement.getAccelerationZ(), measurement.getAccelerationTotal()));
+        measurement.setEquilibriumVaporPressure(
+                equilibriumVaporPressure(measurement.getTemperature()));
+        measurement.setAirDensity(
+                airDensity(
+                        measurement.getTemperature(),
+                        measurement.getHumidity(),
+                        measurement.getPressure()));
+        measurement.setAccelerationTotal(
+                totalAcceleration(
+                        measurement.getAccelerationX(),
+                        measurement.getAccelerationY(),
+                        measurement.getAccelerationZ()));
+        measurement.setAccelerationAngleFromX(
+                angleBetweenVectorComponentAndAxis(
+                        measurement.getAccelerationX(), measurement.getAccelerationTotal()));
+        measurement.setAccelerationAngleFromY(
+                angleBetweenVectorComponentAndAxis(
+                        measurement.getAccelerationY(), measurement.getAccelerationTotal()));
+        measurement.setAccelerationAngleFromZ(
+                angleBetweenVectorComponentAndAxis(
+                        measurement.getAccelerationZ(), measurement.getAccelerationTotal()));
         return measurement;
     }
 
@@ -31,22 +48,26 @@ public class MeasurementValueCalculator {
      * @param accelerationZ
      * @return The total acceleration strength
      */
-    public static Double totalAcceleration(Double accelerationX, Double accelerationY, Double accelerationZ) {
+    public static Double totalAcceleration(
+            Double accelerationX, Double accelerationY, Double accelerationZ) {
         if (accelerationX == null || accelerationY == null || accelerationZ == null) {
             return null;
         }
-        return Math.sqrt(accelerationX * accelerationX + accelerationY * accelerationY + accelerationZ * accelerationZ);
+        return Math.sqrt(
+                accelerationX * accelerationX
+                        + accelerationY * accelerationY
+                        + accelerationZ * accelerationZ);
     }
 
     /**
-     * Calculates the angle between a vector component and the corresponding
-     * axis
+     * Calculates the angle between a vector component and the corresponding axis
      *
      * @param vectorComponent Vector component
      * @param vectorLength Vector length
      * @return Angle between the components axis and the vector, in degrees
      */
-    public static Double angleBetweenVectorComponentAndAxis(Double vectorComponent, Double vectorLength) {
+    public static Double angleBetweenVectorComponentAndAxis(
+            Double vectorComponent, Double vectorLength) {
         if (vectorComponent == null || vectorLength == null || vectorLength == 0) {
             return null;
         }
@@ -64,7 +85,10 @@ public class MeasurementValueCalculator {
         if (temperature == null || relativeHumidity == null) {
             return null;
         }
-        return equilibriumVaporPressure(temperature) * relativeHumidity * 0.021674 / (273.15 + temperature);
+        return equilibriumVaporPressure(temperature)
+                * relativeHumidity
+                * 0.021674
+                / (273.15 + temperature);
     }
 
     /**
@@ -107,6 +131,11 @@ public class MeasurementValueCalculator {
         if (temperature == null || relativeHumidity == null || pressure == null) {
             return null;
         }
-        return 1.2929 * 273.15 / (temperature + 273.15) * (pressure - 0.3783 * relativeHumidity / 100 * equilibriumVaporPressure(temperature)) / 101300;
+        return 1.2929
+                * 273.15
+                / (temperature + 273.15)
+                * (pressure
+                        - 0.3783 * relativeHumidity / 100 * equilibriumVaporPressure(temperature))
+                / 101300;
     }
 }

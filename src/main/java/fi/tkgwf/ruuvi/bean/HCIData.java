@@ -3,9 +3,7 @@ package fi.tkgwf.ruuvi.bean;
 import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
 
-/**
- * Parsed data from hcidump
- */
+/** Parsed data from hcidump */
 public class HCIData {
 
     public Integer packetType;
@@ -34,7 +32,28 @@ public class HCIData {
 
     @Override
     public String toString() {
-        return "HCIData{" + "packetType=" + packetType + ", eventCode=" + eventCode + ", packetLength=" + packetLength + ", subEvent=" + subEvent + ", numberOfReports=" + numberOfReports + ", eventType=" + eventType + ", peerAddressType=" + peerAddressType + ", mac=" + mac + ", reports=" + reports + ", rssi=" + rssi + '}';
+        return "HCIData{"
+                + "packetType="
+                + packetType
+                + ", eventCode="
+                + eventCode
+                + ", packetLength="
+                + packetLength
+                + ", subEvent="
+                + subEvent
+                + ", numberOfReports="
+                + numberOfReports
+                + ", eventType="
+                + eventType
+                + ", peerAddressType="
+                + peerAddressType
+                + ", mac="
+                + mac
+                + ", reports="
+                + reports
+                + ", rssi="
+                + rssi
+                + '}';
     }
 
     public static class Report {
@@ -63,7 +82,14 @@ public class HCIData {
 
             @Override
             public String toString() {
-                return "AdvertisementData{" + "length=" + length + ", type=" + type + ", data=" + data + '}';
+                return "AdvertisementData{"
+                        + "length="
+                        + length
+                        + ", type="
+                        + type
+                        + ", data="
+                        + data
+                        + '}';
             }
         }
     }

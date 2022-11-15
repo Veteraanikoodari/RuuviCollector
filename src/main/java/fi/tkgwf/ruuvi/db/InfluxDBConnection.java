@@ -1,29 +1,30 @@
 package fi.tkgwf.ruuvi.db;
 
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
-import fi.tkgwf.ruuvi.config.Config;
+import fi.tkgwf.ruuvi.config.Configuration;
 import fi.tkgwf.ruuvi.utils.InfluxDBConverter;
 import java.util.concurrent.TimeUnit;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Point;
 
-public class InfluxDBConnection implements DBConnection {
+public class InfluxDBConnection implements RuuviDBConnection {
 
     private final InfluxDB influxDB;
 
+    private static final Configuration cfg = Configuration.get();
+
     public InfluxDBConnection() {
         this(
-                Config.getInfluxUrl(),
-                Config.getInfluxUser(),
-                Config.getInfluxPassword(),
-                Config.getInfluxDatabase(),
-                Config.getInfluxRetentionPolicy(),
-                Config.isInfluxGzip(),
-                Config.isInfluxBatch(),
-                Config.getInfluxBatchMaxSize(),
-                Config.getInfluxBatchMaxTimeMs()
-        );
+                cfg.influxCommon.url,
+                cfg.influxDB.user,
+                cfg.influxDB.pwd,
+                cfg.influxDB.database,
+                cfg.influxCommon.retentionPolicy,
+                cfg.influxCommon.gzip,
+                cfg.influxCommon.batch,
+                cfg.influxCommon.batchMaxSize,
+                cfg.influxCommon.batchMaxTimeMs);
     }
 
     public InfluxDBConnection(
@@ -35,9 +36,11 @@ public class InfluxDBConnection implements DBConnection {
             boolean gzip,
             boolean batch,
             int batchSize,
-            int batchTime
-    ) {
-        influxDB = InfluxDBFactory.connect(url, user, password).setDatabase(database).setRetentionPolicy(retentionPolicy);
+            int batchTime) {
+        influxDB =
+                InfluxDBFactory.connect(url, user, password)
+                        .setDatabase(database)
+                        .setRetentionPolicy(retentionPolicy);
         if (gzip) {
             influxDB.enableGzip();
         } else {

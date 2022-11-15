@@ -1,34 +1,19 @@
 package fi.tkgwf.ruuvi.utils;
 
-import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
-import fi.tkgwf.ruuvi.config.Config;
-import fi.tkgwf.ruuvi.config.ConfigTest;
-import org.influxdb.dto.Point;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static java.util.Collections.emptySet;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.function.Predicate;
-
-import static java.util.Collections.emptySet;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.influxdb.dto.Point;
+import org.junit.jupiter.api.Test;
 
 class InfluxDBConverterTest {
-
-    @BeforeEach
-    void resetConfigBefore() {
-        Config.reload(ConfigTest.configTestFileFinder());
-    }
-
-    @AfterAll
-    static void resetConfigAfter() {
-        Config.reload(ConfigTest.configTestFileFinder());
-    }
 
     @Test
     void toInfluxShouldGiveExtendedValues() {
@@ -48,15 +33,16 @@ class InfluxDBConverterTest {
     void toInfluxFalseShouldGiveOnlyRawValues() {
         final EnhancedRuuviMeasurement measurement = createMeasurement();
         final Point point = InfluxDBConverter.toInflux(measurement, false);
-        assertPointContainsAllValuesBut(point,
-            "accelerationTotal",
-            "absoluteHumidity",
-            "dewPoint",
-            "equilibriumVaporPressure",
-            "airDensity",
-            "accelerationAngleFromX",
-            "accelerationAngleFromY",
-            "accelerationAngleFromZ");
+        assertPointContainsAllValuesBut(
+                point,
+                "accelerationTotal",
+                "absoluteHumidity",
+                "dewPoint",
+                "equilibriumVaporPressure",
+                "airDensity",
+                "accelerationAngleFromX",
+                "accelerationAngleFromY",
+                "accelerationAngleFromZ");
     }
 
     @Test
@@ -65,10 +51,11 @@ class InfluxDBConverterTest {
         props.put("storage.values", "whitelist");
         props.put("storage.values.list", "pressure");
         props.put("tag.BBBBBBBBBBBB.storage.values", "blacklist");
-        props.put("tag.BBBBBBBBBBBB.storage.values.list", "accelerationX,accelerationY,accelerationZ");
+        props.put(
+                "tag.BBBBBBBBBBBB.storage.values.list",
+                "accelerationX,accelerationY,accelerationZ");
         props.put("tag.CCCCCCCCCCCC.storage.values", "whitelist");
         props.put("tag.CCCCCCCCCCCC.storage.values.list", "temperature,humidity");
-        Config.readConfigFromProperties(props);
 
         final EnhancedRuuviMeasurement measurement = createMeasurement();
         final Point point = InfluxDBConverter.toInflux(measurement);
@@ -88,10 +75,11 @@ class InfluxDBConverterTest {
     @Test
     void toInfluxWithAllowFunctionShouldIncludeRequiredValuesOnly() {
         final EnhancedRuuviMeasurement measurement = createMeasurement();
-        final Predicate<String> allowFunction = fieldName ->
-            fieldName.equals("accelerationTotal")
-                || fieldName.equals("measurementSequenceNumber")
-                || fieldName.equals("txPower");
+        final Predicate<String> allowFunction =
+                fieldName ->
+                        fieldName.equals("accelerationTotal")
+                                || fieldName.equals("measurementSequenceNumber")
+                                || fieldName.equals("txPower");
         measurement.setMeasurementSequenceNumber(null);
         final Point point = InfluxDBConverter.toInflux(measurement, allowFunction);
         assertTrue(point.toString().contains("mac")); // cannot be disabled
@@ -106,7 +94,11 @@ class InfluxDBConverterTest {
         assertFalse(point.toString().contains("batteryVoltage"));
         assertTrue(point.toString().contains("txPower"));
         assertFalse(point.toString().contains("movementCounter"));
-        assertFalse(point.toString().contains("measurementSequenceNumber")); // allowed but null -> should not be included
+        assertFalse(
+                point.toString()
+                        .contains(
+                                "measurementSequenceNumber")); // allowed but null -> should not be
+        // included
         assertFalse(point.toString().contains("rssi"));
         assertTrue(point.toString().contains("accelerationTotal"));
         assertFalse(point.toString().contains("absoluteHumidity"));
@@ -122,7 +114,8 @@ class InfluxDBConverterTest {
         assertPoint(point, allValues(), emptySet());
     }
 
-    private static void assertPointContainsAllValuesBut(final Point point, final String... notThis) {
+    private static void assertPointContainsAllValuesBut(
+            final Point point, final String... notThis) {
         final Collection<String> shouldContain = new ArrayList<>(allValues());
         final Collection<String> shouldNotContain = Arrays.asList(notThis);
         shouldNotContain.forEach(shouldContain::remove);
@@ -140,16 +133,42 @@ class InfluxDBConverterTest {
     }
 
     private static Collection<String> allValues() {
-        return Arrays.asList("mac", "dataFormat", "time", "temperature", "humidity", "pressure",
-            "accelerationX", "accelerationY", "accelerationZ", "batteryVoltage", "txPower", "movementCounter",
-            "measurementSequenceNumber", "rssi", "accelerationTotal", "absoluteHumidity", "dewPoint",
-            "equilibriumVaporPressure", "airDensity", "accelerationAngleFromX", "accelerationAngleFromY",
-            "accelerationAngleFromZ");
+        return Arrays.asList(
+                "mac",
+                "dataFormat",
+                "time",
+                "temperature",
+                "humidity",
+                "pressure",
+                "accelerationX",
+                "accelerationY",
+                "accelerationZ",
+                "batteryVoltage",
+                "txPower",
+                "movementCounter",
+                "measurementSequenceNumber",
+                "rssi",
+                "accelerationTotal",
+                "absoluteHumidity",
+                "dewPoint",
+                "equilibriumVaporPressure",
+                "airDensity",
+                "accelerationAngleFromX",
+                "accelerationAngleFromY",
+                "accelerationAngleFromZ");
     }
 
-    private static void assertPoint(final Point point, final Collection<String> shouldContain, final Collection<String> shouldNotContain) {
-        shouldContain.forEach(v -> assertTrue(point.toString().contains(v), v + " should be in the collection"));
-        shouldNotContain.forEach(v -> assertFalse(point.toString().contains(v), v + " should not be in the collection"));
+    private static void assertPoint(
+            final Point point,
+            final Collection<String> shouldContain,
+            final Collection<String> shouldNotContain) {
+        shouldContain.forEach(
+                v -> assertTrue(point.toString().contains(v), v + " should be in the collection"));
+        shouldNotContain.forEach(
+                v ->
+                        assertFalse(
+                                point.toString().contains(v),
+                                v + " should not be in the collection"));
     }
 
     private static EnhancedRuuviMeasurement createMeasurement() {

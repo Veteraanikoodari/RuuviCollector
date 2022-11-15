@@ -1,8 +1,6 @@
-FROM maven:3.5.3-jdk-8-alpine
-RUN apk update
-RUN apk add bluez
-RUN apk add bluez-deprecated
-ADD . /app
-WORKDIR /app
-RUN mvn clean package
-CMD ["java", "-jar", "target/ruuvi-collector-0.2.jar"]
+FROM eclipse-temurin:11.0.17_8-jre
+RUN apt-get update
+RUN apt-get -y install bluez
+RUN apt-get -y install bluez-hcidump
+COPY ruuvi-collector-0.2-all.jar ruuvi-collector-1.0.1.jar
+ENTRYPOINT ["java","-jar","/ruuvi-collector-1.0.1.jar"]

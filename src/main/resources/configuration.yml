@@ -1,0 +1,72 @@
+
+sensor:
+    measurementUpdateLimitMs: 9900
+    motionSensitivityStrategyThreshold: 0.05
+    motionSensitivityStrategyNumberOfPreviousMeasurementsToKeep: 3
+    scanCommand: "hcitool lescan --duplicates --passive"
+    dumpCommand: "hcidump --raw"
+    # <macAddress, name> map to differentiate sensors in human-readable way
+    macAddressToName:
+        A1A1A1A1A1A1: "mySensor"
+        A2A2A2A2A2A2: "myOtherSensor"
+
+    # mac address whitelist filtering
+    allowedMac: { }
+
+storage:
+    receiver:
+    # default storage method is timescaleDB
+    method: "timescaleDB"
+    # All the available fields/values from ruuviTag sensor.
+    # Either remove or comment out unwanted fields.
+    fields:
+        - "temperature"
+        - "humidity"
+        - "pressure"
+        - "accelerationX"
+        - "accelerationY"
+        - "accelerationZ"
+        - "batteryVoltage"
+        - "txPower"
+        - "rssi"
+        - "movementCounter"
+        - "measurementSequenceNumber"
+        - "accelerationTotal"
+        - "absoluteHumidity"
+        - "dewPoint"
+        - "equilibriumVaporPressure"
+        - "airDensity"
+        - "accelerationAngleFromX"
+        - "accelerationAngleFromY"
+        - "accelerationAngleFromZ"
+
+timescaleDB:
+    url: "jdbc:postgresql://localhost/"
+    database: "ruuvi"
+    user: "ruuvi"
+    pwd: "ruuvi"
+    createTables: true
+    batchSize: 10
+
+influxDB:
+    database: "ruuvi"
+    user: "ruuvi"
+    pwd: "ruuvi"
+
+influxDB2:
+    token: "ruuvi"
+    org: "ruuvi"
+    bucket: "ruuvi"
+
+influxCommon:
+    url: "http://localhost:8086"
+    measurement: "ruuvi_measurement"
+    retentionPolicy: "autogen"
+    gzip: true
+    batch: true
+    exitOnInfluxDBIOException: false
+    batchMaxSize: 2000
+    batchMaxTimeMs: 100
+
+prometheus:
+    httpPort: 9155

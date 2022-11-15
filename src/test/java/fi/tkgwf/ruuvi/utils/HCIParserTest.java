@@ -1,12 +1,11 @@
 package fi.tkgwf.ruuvi.utils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import fi.tkgwf.ruuvi.TestFixture;
 import fi.tkgwf.ruuvi.bean.HCIData;
-import org.junit.jupiter.api.Test;
-
 import java.util.Arrays;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 class HCIParserTest {
 
@@ -34,8 +33,24 @@ class HCIParserTest {
 
         assertEquals(17, hciData.reports.get(0).advertisements.get(1).length.intValue());
         assertEquals(255, hciData.reports.get(0).advertisements.get(1).type.intValue());
-        assertEquals(Arrays.asList((byte) -103, (byte) 4, (byte) 3, (byte) 73, (byte) 22, (byte) 14, (byte) -66,
-            (byte) -8, (byte) 0, (byte) 5, (byte) -1, (byte) -22, (byte) 3, (byte) -31, (byte) 11, (byte) -65),
-            hciData.reports.get(0).advertisements.get(1).data);
+        assertEquals(
+                Arrays.asList(
+                        (byte) -103,
+                        (byte) 4,
+                        (byte) 3,
+                        (byte) 73,
+                        (byte) 22,
+                        (byte) 14,
+                        (byte) -66,
+                        (byte) -8,
+                        (byte) 0,
+                        (byte) 5,
+                        (byte) -1,
+                        (byte) -22,
+                        (byte) 3,
+                        (byte) -31,
+                        (byte) 11,
+                        (byte) -65),
+                hciData.reports.get(0).advertisements.get(1).data);
     }
 }
