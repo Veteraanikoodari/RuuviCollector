@@ -1,11 +1,14 @@
 package fi.tkgwf.ruuvi.db;
 
+import static fi.tkgwf.ruuvi.db.TimescaleDBUtil.*;
+
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Configuration;
+
 import java.sql.*;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
+
 import org.apache.log4j.Logger;
 
 public class TimescaleDBConnection implements RuuviDBConnection {
@@ -20,27 +23,29 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     private PreparedStatement writeMeasurementPS;
     private int batchCounter;
 
-    public static void main(String[] args) throws Exception {
-        new TimescaleDBConnection();
-    }
-
-    public TimescaleDBConnection() throws SQLException {
-        this(cfg.timescaleDB.url, cfg.timescaleDB.user, cfg.timescaleDB.pwd);
-    }
-
-    public TimescaleDBConnection(String url, String user, String pwd) throws SQLException {
-
-        LOG.info(
-                "Configure reflection access to " + EnhancedRuuviMeasurement.class.getSimpleName());
-        EnhancedRuuviMeasurement.enableCallFieldGetterByMethodName();
+    public static TimescaleDBConnection fromConfiguration() throws SQLException {
+        var url = Configuration.get().timescaleDB.url;
+        var user = Configuration.get().timescaleDB.user;
+        var pwd = Configuration.get().timescaleDB.pwd;
         // Auto-fix for minor detail.
         if (!url.endsWith("/")) {
             url += "/";
         }
-
         LOG.info("Connecting to database..");
-        con = DriverManager.getConnection(url + cfg.timescaleDB.database, user, pwd);
+        var con = DriverManager.getConnection(url + cfg.timescaleDB.database, user, pwd);
         LOG.info("..connected.");
+        return new TimescaleDBConnection(con);
+    }
+
+    public static TimescaleDBConnection from(Connection con) throws SQLException {
+        return new TimescaleDBConnection(con);
+    }
+
+    private TimescaleDBConnection(Connection connection) throws SQLException {
+        con = connection;
+        LOG.info("Configure reflection access to " + EnhancedRuuviMeasurement.class.getSimpleName());
+        EnhancedRuuviMeasurement.enableCallFieldGetterByMethodName();
+
         if (cfg.timescaleDB.createTables) {
             createTables();
         }
@@ -70,53 +75,12 @@ public class TimescaleDBConnection implements RuuviDBConnection {
 
         executeUpdate(getSensorTableStr());
         executeUpdate(getMeasurementTableStr());
-        createHypertable();
-        executeUpdate(
-                "CREATE INDEX IF NOT EXISTS idx_device_id_time ON "
-                        + MEASUREMENT
-                        + " (device_id, time DESC)");
-
+        executeUpdate(getCreateMeasurementTableIdxStr());
+        executeSelectUpdate(getCreateHyperTableStr());
+        executeUpdate(getCreateContinuousAggregate("five_minutes", "5 minutes"));
+        executeSelectUpdate(getCreateContinuousAggregatePolicy("five_minutes", "1 month",
+            "1 hour", "1 hour"));
         LOG.info("database configured.");
-    }
-
-    private String getSensorTableStr() {
-        return "CREATE TABLE IF NOT EXISTS "
-                + SENSOR
-                + " ("
-                + " id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"
-                + " name TEXT UNIQUE,"
-                + " description TEXT,"
-                + " create_time TIMESTAMPTZ,"
-                + " battery_change_time TIMESTAMPTZ,"
-                + " mac_address TEXT UNIQUE)";
-    }
-
-    private String getMeasurementTableStr() {
-        StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS " + MEASUREMENT);
-        sb.append(" (");
-        sb.append("device_id INTEGER REFERENCES " + SENSOR + "(id) ON DELETE RESTRICT, ");
-        Configuration.get().storage.fields.forEach(field -> appendField(sb, field));
-        sb.append(" time TIMESTAMPTZ NOT NULL)");
-        return sb.toString();
-    }
-
-    /** Hacky trick to derive datatype from field name. */
-    private void appendField(StringBuilder sb, String name) {
-        String dataType = " DOUBLE PRECISION";
-        if (isIntField(name)) {
-            dataType = " INTEGER";
-        } else if (isTimeField(name)) {
-            dataType = " TIMESTAMPTZ NOT NULL";
-        }
-        sb.append(toSnakeCase(name)).append(dataType).append(",");
-    }
-
-    private boolean isIntField(String name) {
-        return name.endsWith("Number") || name.endsWith("Counter");
-    }
-
-    private boolean isTimeField(String name) {
-        return name.endsWith("Time");
     }
 
     private void writeMeasurement(EnhancedRuuviMeasurement measurement) throws SQLException {
@@ -153,6 +117,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
             writeMeasurementPS.executeUpdate();
         }
     }
+
     /**
      * Writes sensor info to database if it doesn't exist. Updates sensor name if different from
      * configured. The check is performed only once per macAddress during runtime.
@@ -167,42 +132,21 @@ public class TimescaleDBConnection implements RuuviDBConnection {
         readSensorData(macAddress);
         // Sensor not found
         if (!configuredSensors.containsKey(macAddress)) {
-            var sql =
-                    "INSERT INTO "
-                            + SENSOR
-                            + "(name, create_time, battery_change_time, mac_address)"
-                            + " VALUES("
-                            + configuredName
-                            + ","
-                            + "NOW(), NOW(), '"
-                            + macAddress
-                            + "')";
-            executeUpdate(sql);
-            // read again.
+            executeUpdate(getWriteSensorInfoStr(macAddress));
+            // read again to update cache
             readSensorData(macAddress);
         }
-        // Sensor name in database differs from configured
+        // Sensor name in database differs from configured, update
         else if (!Objects.equals(configuredName, configuredSensors.get(macAddress).name)) {
-            var sql =
-                    "UPDATE "
-                            + SENSOR
-                            + " SET name = '"
-                            + configuredName
-                            + "' WHERE mac_address = '"
-                            + macAddress
-                            + "'";
-            executeUpdate(sql);
+            executeUpdate(getUpdateSensorInfoStr(macAddress));
             configuredSensors.get(macAddress).name = configuredName;
         }
     }
 
     /**
-     * Returns sensor name from the database. An existing sensor without name is identified as empty
-     * string whereas non-existing sensor is identified by NULL return value.
+     * Read sensor from the database. An existing sensor is cached.
      *
-     * @param macAddress
-     * @return sensor name (null, empty or real)
-     * @throws SQLException
+     * @param macAddress sensor to read
      */
     private void readSensorData(String macAddress) throws SQLException {
         String sql = "SELECT id, name FROM " + SENSOR + " WHERE mac_address = '" + macAddress + "'";
@@ -210,8 +154,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
         try (var stmt = con.createStatement()) {
             var rs = stmt.executeQuery(sql);
             if (rs.next()) {
-                configuredSensors.put(
-                        macAddress, new ConfiguredSensor(rs.getInt(1), rs.getString(2)));
+                configuredSensors.put(macAddress, new ConfiguredSensor(rs.getInt(1), rs.getString(2)));
             }
         }
     }
@@ -223,42 +166,21 @@ public class TimescaleDBConnection implements RuuviDBConnection {
         }
     }
 
-    private void initWritePS() throws SQLException {
-
-        if (writeMeasurementPS == null) {
-            var fieldStr = "device_id," + toSnakeCase(cfg.storage.fields) + ",time";
-            var paramStr =
-                    "?,?,"
-                            + cfg.storage.fields.stream()
-                                    .map((s) -> "?")
-                                    .collect(Collectors.joining(","));
-
-            var sql =
-                    "INSERT INTO "
-                            + MEASUREMENT
-                            + " ("
-                            + fieldStr
-                            + ")"
-                            + " VALUES ("
-                            + paramStr
-                            + ")";
-            writeMeasurementPS = con.prepareStatement(sql);
-        }
-    }
-
-    private void createHypertable() throws SQLException {
-        var sql =
-                "SELECT * FROM create_hypertable('"
-                        + MEASUREMENT
-                        + "','time', if_not_exists => TRUE)";
+    private void executeSelectUpdate(String sql) throws SQLException {
         LOG.info(sql);
         try (var stmt = con.createStatement()) {
             var rs = stmt.executeQuery(sql);
             if (rs.next()) {
-                LOG.info("Created hypertable: " + rs.getString(1));
+                LOG.info("Result: " + rs.getString(1));
             } else {
-                throw new SQLException("Unable to create hypertable");
+                throw new SQLException("Initialization error with statement: " + sql);
             }
+        }
+    }
+
+    private void initWritePS() throws SQLException {
+        if (writeMeasurementPS == null) {
+            writeMeasurementPS = con.prepareStatement(getWriteMeasurementStr());
         }
     }
 
@@ -270,13 +192,5 @@ public class TimescaleDBConnection implements RuuviDBConnection {
 
         int id;
         String name;
-    }
-
-    private String toSnakeCase(List<String> src) {
-        return src.stream().map(this::toSnakeCase).collect(Collectors.joining(","));
-    }
-
-    private String toSnakeCase(String str) {
-        return str.replaceAll("([A-Z])", "_$1").toLowerCase();
     }
 }

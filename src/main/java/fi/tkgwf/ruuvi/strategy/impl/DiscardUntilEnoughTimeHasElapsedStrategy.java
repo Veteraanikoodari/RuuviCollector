@@ -11,25 +11,25 @@ import java.util.Optional;
  * separately to all the different devices sending data, i.e. per MAC address.
  */
 public class DiscardUntilEnoughTimeHasElapsedStrategy implements LimitingStrategy {
-    /** Contains the MAC address as key, and the timestamp of last sent update as value */
-    long lastUpdateTime = System.currentTimeMillis();
+  /** Contains the MAC address as key, and the timestamp of last sent update as value */
+  long lastUpdateTime = System.currentTimeMillis();
 
-    private final long updateLimit = Configuration.get().sensor.measurementUpdateLimitMs;
+  private final long updateLimit = Configuration.get().sensor.measurementUpdateLimitMs;
 
-    @Override
-    public Optional<EnhancedRuuviMeasurement> apply(final EnhancedRuuviMeasurement measurement) {
-        if (!shouldUpdate()) {
-            return Optional.empty();
-        }
-        return Optional.of(measurement);
+  @Override
+  public Optional<EnhancedRuuviMeasurement> apply(final EnhancedRuuviMeasurement measurement) {
+    if (!shouldUpdate()) {
+      return Optional.empty();
     }
+    return Optional.of(measurement);
+  }
 
-    private boolean shouldUpdate() {
-        final long currentTime = System.currentTimeMillis();
-        if (lastUpdateTime + updateLimit < currentTime) {
-            lastUpdateTime = currentTime;
-            return true;
-        }
-        return false;
+  private boolean shouldUpdate() {
+    final long currentTime = System.currentTimeMillis();
+    if (lastUpdateTime + updateLimit < currentTime) {
+      lastUpdateTime = currentTime;
+      return true;
     }
+    return false;
+  }
 }

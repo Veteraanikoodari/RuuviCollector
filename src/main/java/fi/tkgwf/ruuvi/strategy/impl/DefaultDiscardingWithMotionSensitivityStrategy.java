@@ -17,53 +17,49 @@ import java.util.*;
  * address.
  */
 public class DefaultDiscardingWithMotionSensitivityStrategy implements LimitingStrategy {
-    private final DiscardUntilEnoughTimeHasElapsedStrategy defaultStrategy =
-            new DiscardUntilEnoughTimeHasElapsedStrategy();
+  private final DiscardUntilEnoughTimeHasElapsedStrategy defaultStrategy =
+      new DiscardUntilEnoughTimeHasElapsedStrategy();
 
-    private final Double threshold = Configuration.get().sensor.motionSensitivityStrategyThreshold;
-    private final List<EnhancedRuuviMeasurement> previousMeasurements = new ArrayList<>();
-    private boolean previousOutsideOfRange = false;
+  private final Double threshold = Configuration.get().sensor.motionSensitivityStrategyThreshold;
+  private final List<EnhancedRuuviMeasurement> previousMeasurements = new ArrayList<>();
+  private boolean previousOutsideOfRange = false;
 
-    @Override
-    public Optional<EnhancedRuuviMeasurement> apply(final EnhancedRuuviMeasurement measurement) {
-        previousMeasurements.add(measurement);
-        if (previousMeasurements.size()
-                > Configuration.get()
-                        .sensor
-                        .motionSensitivityStrategyNumberOfPreviousMeasurementsToKeep) {
-            previousMeasurements.remove(0);
-        }
-        // Always apply the default strategy to keep the timestamps updated there:
-        Optional<EnhancedRuuviMeasurement> result = defaultStrategy.apply(measurement);
+  @Override
+  public Optional<EnhancedRuuviMeasurement> apply(final EnhancedRuuviMeasurement measurement) {
+    previousMeasurements.add(measurement);
+    if (previousMeasurements.size()
+        > Configuration.get().sensor.motionSensitivityStrategyNumberOfPreviousMeasurementsToKeep) {
+      previousMeasurements.remove(0);
+    }
+    // Always apply the default strategy to keep the timestamps updated there:
+    Optional<EnhancedRuuviMeasurement> result = defaultStrategy.apply(measurement);
 
-        // Apply the motion sensing strategy only if the base strategy says "no":
-        if (result.isEmpty() && previousMeasurements.size() > 1) {
-            final EnhancedRuuviMeasurement previous =
-                    previousMeasurements.get(previousMeasurements.size() - 2);
-            if (isOutsideThreshold(measurement.getAccelerationX(), previous.getAccelerationX())
-                    || isOutsideThreshold(
-                            measurement.getAccelerationY(), previous.getAccelerationY())
-                    || isOutsideThreshold(
-                            measurement.getAccelerationZ(), previous.getAccelerationZ())) {
-                result = Optional.of(measurement);
-                previousOutsideOfRange = true;
-            } else if (previousOutsideOfRange) {
-                // Reset the measurements: store one more event after the values have returned to
-                // within the threshold
-                result = Optional.of(measurement);
-                previousOutsideOfRange = false;
-            }
-        }
-
-        return result;
+    // Apply the motion sensing strategy only if the base strategy says "no":
+    if (result.isEmpty() && previousMeasurements.size() > 1) {
+      final EnhancedRuuviMeasurement previous =
+          previousMeasurements.get(previousMeasurements.size() - 2);
+      if (isOutsideThreshold(measurement.getAccelerationX(), previous.getAccelerationX())
+          || isOutsideThreshold(measurement.getAccelerationY(), previous.getAccelerationY())
+          || isOutsideThreshold(measurement.getAccelerationZ(), previous.getAccelerationZ())) {
+        result = Optional.of(measurement);
+        previousOutsideOfRange = true;
+      } else if (previousOutsideOfRange) {
+        // Reset the measurements: store one more event after the values have returned to
+        // within the threshold
+        result = Optional.of(measurement);
+        previousOutsideOfRange = false;
+      }
     }
 
-    private boolean isOutsideThreshold(final Double current, final Double previous) {
-        if (current == null || previous == null) {
-            return false;
-        }
-        final double upperBound = previous + threshold;
-        final double lowerBound = previous - threshold;
-        return current > upperBound || current < lowerBound;
+    return result;
+  }
+
+  private boolean isOutsideThreshold(final Double current, final Double previous) {
+    if (current == null || previous == null) {
+      return false;
     }
+    final double upperBound = previous + threshold;
+    final double lowerBound = previous - threshold;
+    return current > upperBound || current < lowerBound;
+  }
 }
