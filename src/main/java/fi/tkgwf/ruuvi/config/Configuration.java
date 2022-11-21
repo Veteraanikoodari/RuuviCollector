@@ -54,6 +54,8 @@ public class Configuration {
     public String database;
     public String user;
     public String pwd;
+    public String grafanaUser;
+    public String grafanaPwd;
     public boolean createTables;
     public int batchSize;
   }

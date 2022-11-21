@@ -47,6 +47,9 @@ timescaleDB:
     pwd: "ruuvi"
     createTables: true
     batchSize: 10
+    # Optional grafana user is created with read only privileges
+    grafanaUser: "grafana"
+    grafanaPwd: "grafana"
 
 influxDB:
     database: "ruuvi"

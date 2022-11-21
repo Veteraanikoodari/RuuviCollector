@@ -164,6 +164,12 @@ public class EnhancedRuuviMeasurement extends RuuviMeasurement {
     this.airDensity = airDensity;
   }
 
+    /**
+     * Get field value by name. Works smoothly with autoconfiguration so the persistence manager
+     * gets data only from fields that are configured in the database.
+     * @param fieldName name of the field
+     * @return value
+     */
   public Object getFieldValue(String fieldName) {
     try {
       return nameToGetter.get(fieldName).invoke(this);
@@ -172,6 +178,9 @@ public class EnhancedRuuviMeasurement extends RuuviMeasurement {
     }
   }
 
+    /**
+     * See {@link #getFieldValue(String fieldName)}
+     */
   public static void enableCallFieldGetterByMethodName() {
 
     nameToGetter = new HashMap<>();

@@ -15,7 +15,7 @@ public interface RuuviDBConnection {
     try {
       switch (method) {
         case "timescaleDB":
-          return TimescaleDBConnection.fromConfiguration();
+          return TimescaleDBConnection.fromConfiguration().autoConfigure();
         case "influxdb":
           return new InfluxDBConnection();
         case "influxdb2":
