@@ -1,5 +1,7 @@
 package fi.tkgwf.ruuvi.db;
 
+import static fi.tkgwf.ruuvi.utils.Utils.toSnakeCase;
+
 import fi.tkgwf.ruuvi.config.Configuration;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -7,8 +9,11 @@ import java.util.stream.Collectors;
 /** Utility class to create SQL statements from configured Ruuvitag fields. */
 public class TimescaleDBUtil {
 
-  public static final String MEASUREMENT_TBL = "measurement";
-  public static final String SENSOR_TBL = "sensor";
+  static final String MEASUREMENT = "measurement";
+  static final String SENSOR = "sensor";
+
+  static final String MEASUREMENT_TBL = "measurement";
+  static final String SENSOR_TBL = "sensor";
 
   public static List<String> getCreateUserStr(String user, String pwd) {
     String db = Configuration.get().timescaleDB.database;
@@ -148,13 +153,5 @@ public class TimescaleDBUtil {
       dataType = " TIMESTAMPTZ NOT NULL";
     }
     sb.append(toSnakeCase(name)).append(dataType).append(",");
-  }
-
-  public static String toSnakeCase(List<String> src) {
-    return src.stream().map(TimescaleDBUtil::toSnakeCase).collect(Collectors.joining(","));
-  }
-
-  public static String toSnakeCase(String str) {
-    return str.replaceAll("([A-Z])", "_$1").toLowerCase();
   }
 }

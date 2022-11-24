@@ -1,17 +1,17 @@
 package fi.tkgwf.ruuvi.utils;
 
-import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import org.apache.log4j.Logger;
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
+@Slf4j
 public abstract class Utils {
-
-  private static final Logger LOG = Logger.getLogger(BeaconHandler.class);
 
   /**
    * Converts a space-separated string of hex to ASCII
@@ -132,8 +132,8 @@ public abstract class Utils {
     var nameWithPath =
         System.getProperty("user.dir") + "/" + clazz.getSimpleName().toLowerCase() + ".yml";
     var file = new File(nameWithPath);
-    LOG.info("Looking configuration from: " + file.getAbsolutePath());
-    LOG.info(file.isFile() ? "..found." : "..not found. Using defaults from resources.");
+    log.info("Looking configuration from: " + file.getAbsolutePath());
+    log.info(file.isFile() ? "..found." : "..not found. Using defaults from resources.");
     try (var inputStream =
         file.isFile()
             ? new FileInputStream(file)
@@ -141,6 +141,22 @@ public abstract class Utils {
       Yaml yaml = new Yaml(new Constructor(clazz));
       return yaml.load(inputStream);
     }
+  }
+
+  public static String toSnakeCase(List<String> src) {
+    return src.stream().map(Utils::toSnakeCase).collect(Collectors.joining(","));
+  }
+
+  public static String toSnakeCase(String str) {
+    return str.replaceAll("([A-Z])", "_$1").toLowerCase();
+  }
+
+  public static boolean isBlank(String s) {
+    return s == null || s.isBlank();
+  }
+
+  public static boolean isNotBlank(String s) {
+    return s != null && !s.isBlank();
   }
 
   private static InputStream getInputSreamFromResources(String name) {

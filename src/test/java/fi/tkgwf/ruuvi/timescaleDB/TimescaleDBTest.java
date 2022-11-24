@@ -47,19 +47,15 @@ class TimescaleDBTest {
     var pwd = Configuration.get().timescaleDB.grafanaPwd;
     var con = container.withUsername(user).withPassword(pwd).createConnection("");
     var grafanaCon = TimescaleDBConnection.from(con);
-    var measurement = new RuuviMeasurement();
-    var enhancedMeasurement = new EnhancedRuuviMeasurement(measurement);
+    // The first thing timescaleDBConnection does with new MAC address, is storing it in sensor
+    // table
+    // before processing other data. So no need for more data.
+    var enhancedMeasurement = new EnhancedRuuviMeasurement(new RuuviMeasurement());
     enhancedMeasurement.setMac("A1B1C1D1E1F1");
 
-    boolean readOnlyExceptionThrown = false;
-    try {
-      grafanaCon.save(enhancedMeasurement);
-    } catch (Throwable t) {
-      Assertions.assertEquals(PSQLException.class, t.getCause().getClass());
-      PSQLException pe = (PSQLException) t.getCause();
-      Assertions.assertTrue(pe.getMessage().contains("permission denied"));
-      readOnlyExceptionThrown = true;
-    }
-    Assertions.assertTrue(readOnlyExceptionThrown);
+    var ex =
+        Assertions.assertThrows(RuntimeException.class, () -> grafanaCon.save(enhancedMeasurement));
+    Assertions.assertEquals(PSQLException.class, ex.getCause().getClass());
+    Assertions.assertTrue(ex.getCause().getMessage().contains("permission denied"));
   }
 }

@@ -2,7 +2,6 @@ package fi.tkgwf.ruuvi.utils;
 
 import fi.tkgwf.ruuvi.bean.HCIData;
 import java.util.ArrayList;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class is capable of parsing the raw format dump from hcidump (output of command "hcidump
@@ -31,7 +30,7 @@ public class HCIParser {
    * @return An instance of HCIData containing the parsed data from this line and the previous ones
    */
   public HCIData readLine(String line) {
-    if (StringUtils.isBlank(line)) {
+    if (Utils.isBlank(line)) {
       return null; // ignore blank lines
     }
     line = line.trim();

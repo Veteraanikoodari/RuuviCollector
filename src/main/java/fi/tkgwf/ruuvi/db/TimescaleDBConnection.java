@@ -6,32 +6,33 @@ import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Configuration;
 import java.sql.*;
 import java.time.OffsetDateTime;
-import java.util.*;
-import org.apache.log4j.Logger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class TimescaleDBConnection implements RuuviDBConnection {
 
-  private static final String MEASUREMENT = "measurement";
-  private static final String SENSOR = "sensor";
-  private static final Logger LOG = Logger.getLogger(TimescaleDBConnection.class);
-  private static Configuration cfg = Configuration.get();
+  private static final Configuration cfg = Configuration.get();
   private final Map<String, ConfiguredSensor> configuredSensors = new HashMap<>();
-  private Connection con;
+  private final Connection con;
   // cached for efficiency
   private PreparedStatement writeMeasurementPS;
   private int batchCounter;
 
   public static TimescaleDBConnection fromConfiguration() throws SQLException {
-    var url = Configuration.get().timescaleDB.url;
-    var user = Configuration.get().timescaleDB.user;
-    var pwd = Configuration.get().timescaleDB.pwd;
+    var url = cfg.timescaleDB.url;
+    var user = cfg.timescaleDB.user;
+    var pwd = cfg.timescaleDB.pwd;
     // Auto-fix for minor detail.
     if (!url.endsWith("/")) {
       url += "/";
     }
-    LOG.info("Connecting to database..");
+    log.info("Connecting to database..");
     var con = DriverManager.getConnection(url + cfg.timescaleDB.database, user, pwd);
-    LOG.info("..connected.");
+    log.info("..connected.");
     return new TimescaleDBConnection(con);
   }
 
@@ -41,15 +42,15 @@ public class TimescaleDBConnection implements RuuviDBConnection {
 
   private TimescaleDBConnection(Connection connection) throws SQLException {
     con = connection;
-    LOG.info("Configure reflection access to " + EnhancedRuuviMeasurement.class.getSimpleName());
+    log.info("Configure reflection access to " + EnhancedRuuviMeasurement.class.getSimpleName());
     EnhancedRuuviMeasurement.enableCallFieldGetterByMethodName();
   }
 
   public TimescaleDBConnection autoConfigure() throws SQLException {
     if (cfg.timescaleDB.createTables) {
       createTables();
-      var grafanaUser = Configuration.get().timescaleDB.grafanaUser;
-      var grafanaPwd = Configuration.get().timescaleDB.grafanaPwd;
+      var grafanaUser = cfg.timescaleDB.grafanaUser;
+      var grafanaPwd = cfg.timescaleDB.grafanaPwd;
       if (grafanaUser != null && grafanaPwd != null) {
         createUser(grafanaUser, grafanaPwd);
       }
@@ -77,18 +78,18 @@ public class TimescaleDBConnection implements RuuviDBConnection {
   }
 
   private void createUser(String user, String pwd) {
-    LOG.info("-- Creating user with view only privileges: " + user);
+    log.info("-- Creating user with view only privileges: " + user);
     var sql = String.format("SELECT 1 FROM pg_roles WHERE rolname='%s'", user);
     if (executeQueryReturnsNoRows(sql)) {
       getCreateUserStr(user, pwd).forEach(this::executeUpdate);
     }
-    LOG.info("-- User created: " + user);
+    log.info("-- User created: " + user);
   }
 
   private void createTables() throws SQLException {
     // TODO continuos_aggregate to real time aggregate
     var db = cfg.timescaleDB.database;
-    LOG.info("-- Creating tables for database: " + db);
+    log.info("-- Creating tables for database: " + db);
     executeUpdate(getSensorTableStr());
     executeUpdate(getMeasurementTableStr());
     executeUpdate(getCreateMeasurementTableIdxStr());
@@ -96,7 +97,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     executeUpdate(getCreateContinuousAggregate("five_minutes", "5 minutes"));
     executeSelectUpdate(
         getCreateContinuousAggregatePolicy("five_minutes", "1 month", "1 hour", "1 hour"));
-    LOG.info("-- Database configured: " + db);
+    log.info("-- Database configured: " + db);
   }
 
   private void writeMeasurement(EnhancedRuuviMeasurement measurement) throws SQLException {
@@ -106,7 +107,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     writeMeasurementPS.setInt(idx++, configuredSensors.get(measurement.getMac()).id);
     for (var name : cfg.storage.fields) {
       var value = measurement.getFieldValue(name);
-      // LOG.info("Field: " + name + " Value: " + value);
+      log.debug("Field: " + name + " Value: " + value);
       var sqlType = Types.DOUBLE;
       if (isIntField(name)) {
         sqlType = Types.INTEGER;
@@ -143,7 +144,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
       return;
     }
     var macAddress = measurement.getMac();
-    LOG.info("Write sensor info for: " + measurement.getMac());
+    log.info("Write sensor info for: " + measurement.getMac());
     var configuredName = cfg.sensor.macAddressToName.get(macAddress);
     readSensorData(macAddress);
     // Sensor not found
@@ -176,7 +177,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
   }
 
   private void executeUpdate(String sql) {
-    LOG.info(sql);
+    log.info(sql);
     try (var stmt = con.createStatement()) {
       stmt.executeUpdate(sql);
     } catch (SQLException e) {
@@ -185,11 +186,11 @@ public class TimescaleDBConnection implements RuuviDBConnection {
   }
 
   private void executeSelectUpdate(String sql) throws SQLException {
-    LOG.info(sql);
+    log.info(sql);
     try (var stmt = con.createStatement()) {
       var rs = stmt.executeQuery(sql);
       if (rs.next()) {
-        LOG.info("Result: " + rs.getString(1));
+        log.info("Result: " + rs.getString(1));
       } else {
         throw new SQLException("Initialization error with statement: " + sql);
       }
@@ -211,12 +212,8 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     }
   }
 
+  @AllArgsConstructor
   private static class ConfiguredSensor {
-    ConfiguredSensor(int id, String name) {
-      this.id = id;
-      this.name = name;
-    }
-
     int id;
     String name;
   }

@@ -7,7 +7,6 @@ import fi.tkgwf.ruuvi.common.parser.DataFormatParser;
 import fi.tkgwf.ruuvi.common.parser.impl.AnyDataFormatParser;
 import fi.tkgwf.ruuvi.config.Configuration;
 import java.util.Optional;
-import org.apache.log4j.Logger;
 
 /** Creates {@link RuuviMeasurement} instances from raw dumps from hcidump. */
 public class BeaconHandler {
@@ -15,8 +14,6 @@ public class BeaconHandler {
   private final DataFormatParser parser = new AnyDataFormatParser();
 
   private final Configuration cfg = Configuration.get();
-
-  private static final Logger LOG = Logger.getLogger(BeaconHandler.class);
 
   /**
    * Handles a packet and creates a {@link RuuviMeasurement} if the handler understands this packet.

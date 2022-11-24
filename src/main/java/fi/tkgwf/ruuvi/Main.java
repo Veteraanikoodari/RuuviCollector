@@ -11,7 +11,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.influxdb.InfluxDBIOException;
 
@@ -38,7 +37,7 @@ public class Main {
 
   private BufferedReader startHciListeners() throws IOException {
     String[] scan = Configuration.get().sensor.scanCommand.split(" ");
-    if (scan.length > 0 && StringUtils.isNotBlank(scan[0])) {
+    if (scan.length > 0 && Utils.isNotBlank(scan[0])) {
       Process hcitool = new ProcessBuilder(scan).start();
       Runtime.getRuntime().addShutdownHook(new Thread(() -> hcitool.destroyForcibly()));
       LOG.debug("Starting scan with: " + Arrays.toString(scan));

@@ -1,7 +1,6 @@
 package fi.tkgwf.ruuvi.bean;
 
 import java.util.List;
-import org.apache.commons.lang3.ArrayUtils;
 
 /** Parsed data from hcidump */
 public class HCIData {
@@ -76,7 +75,11 @@ public class HCIData {
         if (data == null) {
           return new byte[0];
         } else {
-          return ArrayUtils.toPrimitive(data.toArray(new Byte[data.size()]));
+          var primitives = new byte[data.size()];
+          for (int i = 0; i < primitives.length; i++) {
+            primitives[i] = data.get(i);
+          }
+          return primitives;
         }
       }
 

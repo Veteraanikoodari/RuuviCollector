@@ -37,7 +37,7 @@ public class TagProperties {
   }
 
   public static class Builder {
-    private String mac;
+    private final String mac;
     private LimitingStrategy limitingStrategy;
 
     public Builder(final String mac) {

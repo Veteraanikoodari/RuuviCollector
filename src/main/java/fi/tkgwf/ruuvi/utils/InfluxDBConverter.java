@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.apache.commons.lang3.StringUtils;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
 
@@ -65,7 +64,7 @@ public class InfluxDBConverter {
     if (measurement.getDataFormat() != null) {
       p.tag("dataFormat", String.valueOf(measurement.getDataFormat()));
     }
-    if (StringUtils.isNotBlank(measurement.getReceiver())) {
+    if (Utils.isNotBlank(measurement.getReceiver())) {
       p.tag("receiver", measurement.getReceiver());
     }
     if (measurement.getTime() != null) {

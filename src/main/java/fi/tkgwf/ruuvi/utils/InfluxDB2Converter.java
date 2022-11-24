@@ -3,14 +3,12 @@ package fi.tkgwf.ruuvi.utils;
 import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
-// import fi.tkgwf.ruuvi.config.Config;
 import fi.tkgwf.ruuvi.config.Configuration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.apache.commons.lang3.StringUtils;
 
 public class InfluxDB2Converter {
   public static final Collection<String> RAW_STORAGE_VALUES;
@@ -64,7 +62,7 @@ public class InfluxDB2Converter {
     if (measurement.getDataFormat() != null) {
       p.addTag("dataFormat", String.valueOf(measurement.getDataFormat()));
     }
-    if (StringUtils.isNotBlank(measurement.getReceiver())) {
+    if (Utils.isNotBlank(measurement.getReceiver())) {
       p.addTag("receiver", measurement.getReceiver());
     }
     if (measurement.getTime() != null) {
