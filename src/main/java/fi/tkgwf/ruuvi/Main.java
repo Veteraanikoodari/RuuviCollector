@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.function.Supplier;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -67,7 +66,8 @@ public class Main {
     return run(reader, PersistenceService::new);
   }
 
-  boolean run(final BufferedReader reader, Supplier<PersistenceService> persistenceServiceSupplier) {
+  boolean run(
+      final BufferedReader reader, Supplier<PersistenceService> persistenceServiceSupplier) {
     HCIParser parser = new HCIParser();
     boolean dataReceived = false;
     boolean healthy = false;
@@ -77,8 +77,7 @@ public class Main {
         if (line.contains("device: disconnected")) {
           logDisconnectError(line);
           healthy = false;
-        }
-        else if (line.contains("No such device")) {
+        } else if (line.contains("No such device")) {
           logNoSuchDeviceError(line);
           healthy = false;
         }
@@ -94,7 +93,7 @@ public class Main {
         }
         try {
           // Read in MAC address from first line
-            log.info("About: " + line);
+          log.info("About: " + line);
           if (Utils.hasMacAddress(line)) {
             latestMAC = Utils.getMacFromLine(line);
           }
@@ -143,13 +142,13 @@ public class Main {
   }
 
   private void logDisconnectError(String line) {
-      log.error(
-          line
-              + ": Either the bluetooth device was externally disabled or"
-              + " physically disconnected");
+    log.error(
+        line
+            + ": Either the bluetooth device was externally disabled or"
+            + " physically disconnected");
   }
+
   private void logNoSuchDeviceError(String line) {
-      log.error(
-          line + ": Check that your bluetooth adapter is enabled and working" + " properly");
+    log.error(line + ": Check that your bluetooth adapter is enabled and working" + " properly");
   }
 }

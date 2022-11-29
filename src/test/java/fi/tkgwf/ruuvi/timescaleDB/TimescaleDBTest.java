@@ -1,17 +1,16 @@
 package fi.tkgwf.ruuvi.timescaleDB;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.common.bean.RuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Configuration;
 import fi.tkgwf.ruuvi.db.TimescaleDBConnection;
+import java.sql.SQLException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.postgresql.util.PSQLException;
-
-import java.sql.SQLException;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class TimescaleDBTest extends TimescaleTestBase {
 

@@ -9,13 +9,12 @@ import fi.tkgwf.ruuvi.db.RuuviDBConnection;
 import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import fi.tkgwf.ruuvi.strategy.LimitingStrategy;
 import fi.tkgwf.ruuvi.utils.HCIParser;
+import fi.tkgwf.ruuvi.utils.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-
-import fi.tkgwf.ruuvi.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 class PersistenceServiceTest {
@@ -133,7 +132,7 @@ class PersistenceServiceTest {
   }
 
   private void setClockToMilliseconds(final long millis) {
-      Utils.setCurrentTimeMillisSupplier(() -> millis);
+    Utils.setCurrentTimeMillisSupplier(() -> millis);
   }
 
   private static EnhancedRuuviMeasurement withRssi(

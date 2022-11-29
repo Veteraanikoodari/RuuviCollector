@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -19,12 +18,14 @@ import org.yaml.snakeyaml.constructor.Constructor;
 public abstract class Utils {
 
   private static Supplier<Long> currentTimeMillisSupplier = System::currentTimeMillis;
+
   public static long currentTimeMillis() {
     return currentTimeMillisSupplier.get();
   }
 
   public static OffsetDateTime currentTime() {
-      return OffsetDateTime.ofInstant(Instant.ofEpochMilli(currentTimeMillis()), ZoneId.systemDefault());
+    return OffsetDateTime.ofInstant(
+        Instant.ofEpochMilli(currentTimeMillis()), ZoneId.systemDefault());
   }
 
   public static void resetCurrentTimeMillisSupplier() {
