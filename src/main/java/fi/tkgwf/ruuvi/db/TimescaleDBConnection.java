@@ -5,10 +5,13 @@ import static fi.tkgwf.ruuvi.db.TimescaleDBUtil.*;
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Configuration;
 import java.sql.*;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import fi.tkgwf.ruuvi.utils.Utils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -121,7 +124,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
         writeMeasurementPS.setNull(idx++, sqlType);
       }
     }
-    writeMeasurementPS.setObject(idx, OffsetDateTime.now());
+    writeMeasurementPS.setObject(idx, Utils.currentTime());
     // Manage writes to database
     if (cfg.timescaleDB.batchSize > 1) {
       batchCounter++;
@@ -131,6 +134,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
         writeMeasurementPS.executeBatch();
       }
     } else {
+        log.info("Write measurement: " + measurement.toString());
       writeMeasurementPS.executeUpdate();
     }
   }

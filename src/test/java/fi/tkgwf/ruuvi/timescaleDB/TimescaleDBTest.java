@@ -1,38 +1,19 @@
 package fi.tkgwf.ruuvi.timescaleDB;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.common.bean.RuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Configuration;
 import fi.tkgwf.ruuvi.db.TimescaleDBConnection;
-import java.sql.SQLException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.postgresql.util.PSQLException;
-import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.TimescaleDBContainerProvider;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers
-class TimescaleDBTest {
+import java.sql.SQLException;
 
-  private static TimescaleDBConnection timescale;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-  @Container
-  private static final JdbcDatabaseContainer<?> container =
-      new TimescaleDBContainerProvider().newInstance().withDatabaseName("ruuvi");
-
-  @BeforeAll
-  static void initAll() throws SQLException {
-    container.start();
-    timescale = TimescaleDBConnection.from(container.createConnection(""));
-  }
-
-  @BeforeEach
-  void initEach() {
-    assertDoesNotThrow(() -> timescale.autoConfigure());
-  }
+class TimescaleDBTest extends TimescaleTestBase {
 
   @Test
   @DisplayName("Assert that autoconfiguration runs without errors when called multiple times.")

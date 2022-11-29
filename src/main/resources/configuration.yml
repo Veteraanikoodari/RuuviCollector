@@ -51,25 +51,5 @@ timescaleDB:
     grafanaUser: "grafana"
     grafanaPwd: "grafana"
 
-influxDB:
-    database: "ruuvi"
-    user: "ruuvi"
-    pwd: "ruuvi"
-
-influxDB2:
-    token: "ruuvi"
-    org: "ruuvi"
-    bucket: "ruuvi"
-
-influxCommon:
-    url: "http://localhost:8086"
-    measurement: "ruuvi_measurement"
-    retentionPolicy: "autogen"
-    gzip: true
-    batch: true
-    exitOnInfluxDBIOException: false
-    batchMaxSize: 2000
-    batchMaxTimeMs: 100
-
 prometheus:
     httpPort: 9155

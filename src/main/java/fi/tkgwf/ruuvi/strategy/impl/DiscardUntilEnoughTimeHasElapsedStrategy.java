@@ -3,6 +3,7 @@ package fi.tkgwf.ruuvi.strategy.impl;
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Configuration;
 import fi.tkgwf.ruuvi.strategy.LimitingStrategy;
+import fi.tkgwf.ruuvi.utils.Utils;
 import java.util.Optional;
 
 /**
@@ -11,10 +12,9 @@ import java.util.Optional;
  * separately to all the different devices sending data, i.e. per MAC address.
  */
 public class DiscardUntilEnoughTimeHasElapsedStrategy implements LimitingStrategy {
-  /** Contains the MAC address as key, and the timestamp of last sent update as value */
-  long lastUpdateTime = System.currentTimeMillis();
-
   private final long updateLimit = Configuration.get().sensor.measurementUpdateLimitMs;
+  // set initial update time so that the first incoming measurement is accepted.
+  private long lastUpdateTime = Utils.currentTimeMillis() - updateLimit;
 
   @Override
   public Optional<EnhancedRuuviMeasurement> apply(final EnhancedRuuviMeasurement measurement) {
@@ -25,8 +25,8 @@ public class DiscardUntilEnoughTimeHasElapsedStrategy implements LimitingStrateg
   }
 
   private boolean shouldUpdate() {
-    final long currentTime = System.currentTimeMillis();
-    if (lastUpdateTime + updateLimit < currentTime) {
+    final long currentTime = Utils.currentTimeMillis();
+    if (lastUpdateTime + updateLimit <= currentTime) {
       lastUpdateTime = currentTime;
       return true;
     }

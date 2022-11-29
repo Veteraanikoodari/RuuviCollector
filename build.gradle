@@ -34,6 +34,7 @@ spotless {
         googleJavaFormat('1.15.0').reflowLongStrings()
         // fix formatting of type annotations
         formatAnnotations()
+        targetExclude("src/test/**/TestDataFactory.java")
     }
 }
 

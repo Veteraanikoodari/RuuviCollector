@@ -2,7 +2,7 @@ package fi.tkgwf.ruuvi.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import fi.tkgwf.ruuvi.TestFixture;
+import fi.tkgwf.ruuvi.TestDataFactory;
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.bean.HCIData;
 import fi.tkgwf.ruuvi.db.RuuviDBConnection;
@@ -14,13 +14,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+
+import fi.tkgwf.ruuvi.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 class PersistenceServiceTest {
 
   @Test
   void testApplyingCustomLimitingStrategy() {
-    final HCIData hciData = new HCIParser().readLine(TestFixture.getDataFormat3Message());
+    final HCIData hciData = new HCIParser().readLine(TestDataFactory.getDataFormat5Msg());
     final BeaconHandler handler = new BeaconHandler();
     final MockConnection mockConnection = new MockConnection();
     final LimitingStrategy testingStrategy = new TestingStrategy();
@@ -57,9 +59,9 @@ class PersistenceServiceTest {
     final LimitingStrategy testingStrategy = new TestingStrategy();
     final PersistenceService service = new PersistenceService(mockConnection);
 
-    final HCIData hciData = new HCIParser().readLine(TestFixture.getDataFormat3Message());
+    final HCIData hciData = new HCIParser().readLine(TestDataFactory.getDataFormat5Msg());
     hciData.mac = "ABCDEF012345";
-    final HCIData hciData2 = new HCIParser().readLine(TestFixture.getDataFormat3Message());
+    final HCIData hciData2 = new HCIParser().readLine(TestDataFactory.getDataFormat5Msg());
     hciData2.mac = "F1E2D3C4B5A6";
 
     setClockToMilliseconds(0);
@@ -131,7 +133,7 @@ class PersistenceServiceTest {
   }
 
   private void setClockToMilliseconds(final long millis) {
-    TestFixture.setClockToMilliseconds(() -> millis);
+      Utils.setCurrentTimeMillisSupplier(() -> millis);
   }
 
   private static EnhancedRuuviMeasurement withRssi(

@@ -31,30 +31,4 @@ public class TagProperties {
   public LimitingStrategy getLimitingStrategy() {
     return limitingStrategy;
   }
-
-  public static Builder builder(final String mac) {
-    return new Builder(mac);
-  }
-
-  public static class Builder {
-    private final String mac;
-    private LimitingStrategy limitingStrategy;
-
-    public Builder(final String mac) {
-      this.mac = mac;
-    }
-
-    public Builder add(final String key, final String value) {
-      if ("limitingStrategy".equals(key)) {
-        if ("onMovement".equals(value)) {
-          this.limitingStrategy = new DefaultDiscardingWithMotionSensitivityStrategy();
-        }
-      }
-      return this;
-    }
-
-    public TagProperties build() {
-      return new TagProperties(mac, limitingStrategy);
-    }
-  }
 }

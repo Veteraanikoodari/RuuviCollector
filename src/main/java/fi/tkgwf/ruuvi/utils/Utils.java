@@ -4,7 +4,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.yaml.snakeyaml.Yaml;
@@ -12,6 +17,23 @@ import org.yaml.snakeyaml.constructor.Constructor;
 
 @Slf4j
 public abstract class Utils {
+
+  private static Supplier<Long> currentTimeMillisSupplier = System::currentTimeMillis;
+  public static long currentTimeMillis() {
+    return currentTimeMillisSupplier.get();
+  }
+
+  public static OffsetDateTime currentTime() {
+      return OffsetDateTime.ofInstant(Instant.ofEpochMilli(currentTimeMillis()), ZoneId.systemDefault());
+  }
+
+  public static void resetCurrentTimeMillisSupplier() {
+    currentTimeMillisSupplier = System::currentTimeMillis;
+  }
+
+  public static void setCurrentTimeMillisSupplier(final Supplier<Long> currentTimeSupplier) {
+    currentTimeMillisSupplier = currentTimeSupplier;
+  }
 
   /**
    * Converts a space-separated string of hex to ASCII
@@ -137,7 +159,7 @@ public abstract class Utils {
     try (var inputStream =
         file.isFile()
             ? new FileInputStream(file)
-            : getInputSreamFromResources(clazz.getSimpleName())) {
+            : getInputStreamFromResources(clazz.getSimpleName())) {
       Yaml yaml = new Yaml(new Constructor(clazz));
       return yaml.load(inputStream);
     }
@@ -159,7 +181,7 @@ public abstract class Utils {
     return s != null && !s.isBlank();
   }
 
-  private static InputStream getInputSreamFromResources(String name) {
+  private static InputStream getInputStreamFromResources(String name) {
     return com.sun.tools.javac.Main.class
         .getClassLoader()
         .getResourceAsStream(name.toLowerCase() + ".yml");

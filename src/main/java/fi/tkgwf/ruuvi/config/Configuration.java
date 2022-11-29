@@ -13,9 +13,6 @@ public class Configuration {
   public Sensor sensor;
   public Storage storage;
   public TimescaleDB timescaleDB;
-  public InfluxDB influxDB;
-  public InfluxDB2 influxDB2;
-  public InfluxCommon influxCommon;
   public Prometheus prometheus;
 
   public static Configuration get() {
@@ -58,29 +55,6 @@ public class Configuration {
     public String grafanaPwd;
     public boolean createTables;
     public int batchSize;
-  }
-
-  public static class InfluxDB {
-    public String database;
-    public String user;
-    public String pwd;
-  }
-
-  public static class InfluxDB2 {
-    public String org;
-    public String token;
-    public String bucket;
-  }
-
-  public static class InfluxCommon {
-    public String url;
-    public String measurement;
-    public String retentionPolicy;
-    public boolean gzip;
-    public boolean batch;
-    public boolean exitOnInfluxDBIOException;
-    public int batchMaxSize;
-    public int batchMaxTimeMs;
   }
 
   public static class Prometheus {

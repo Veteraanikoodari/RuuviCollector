@@ -7,7 +7,7 @@ import fi.tkgwf.ruuvi.strategy.LimitingStrategy;
 import java.util.Optional;
 
 public class PersistenceService implements AutoCloseable {
-  private final RuuviDBConnection db;
+  private RuuviDBConnection db;
 
   public PersistenceService() {
     this(RuuviDBConnection.createDBConnection());
@@ -22,7 +22,7 @@ public class PersistenceService implements AutoCloseable {
     db.close();
   }
 
-  public void store(final EnhancedRuuviMeasurement measurement) {
+  public void store(final EnhancedRuuviMeasurement measurement) throws PersistenceServiceException {
     Optional.ofNullable(measurement.getMac())
         .map(mac -> TagProperties.get(mac).getLimitingStrategy())
         .orElse(LimitingStrategy.DEFAULT)
