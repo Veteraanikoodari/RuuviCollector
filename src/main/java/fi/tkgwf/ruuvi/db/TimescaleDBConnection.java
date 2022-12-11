@@ -4,6 +4,7 @@ import static fi.tkgwf.ruuvi.db.TimescaleDBUtil.*;
 
 import fi.tkgwf.ruuvi.bean.EnhancedRuuviMeasurement;
 import fi.tkgwf.ruuvi.config.Configuration;
+import fi.tkgwf.ruuvi.service.PersistenceServiceException;
 import fi.tkgwf.ruuvi.utils.Utils;
 import java.sql.*;
 import java.util.HashMap;
@@ -64,7 +65,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
       writeSensorInfo(measurement);
       writeMeasurement(measurement);
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      throw new PersistenceServiceException(e);
     }
   }
 
@@ -94,7 +95,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     executeUpdate(getMeasurementTableStr());
     executeUpdate(getCreateMeasurementTableIdxStr());
     executeSelectUpdate(getCreateHyperTableStr());
-    executeUpdate(getCreateContinuousAggregate("five_minutes", "5 minutes"));
+    executeUpdate(getCreateRealtimeAggregate("five_minutes", "5 minutes"));
     executeSelectUpdate(
         getCreateContinuousAggregatePolicy("five_minutes", "1 month", "1 hour", "1 hour"));
     log.info("-- Database configured: " + db);
@@ -145,8 +146,8 @@ public class TimescaleDBConnection implements RuuviDBConnection {
       return;
     }
     var macAddress = measurement.getMac();
-    log.info("Write sensor info for: " + measurement.getMac());
     var configuredName = cfg.sensor.macAddressToName.get(macAddress);
+    log.info("Write sensor info for: {} {}", measurement.getMac(), configuredName);
     readSensorData(macAddress);
     // Sensor not found
     if (!configuredSensors.containsKey(macAddress)) {
@@ -167,7 +168,7 @@ public class TimescaleDBConnection implements RuuviDBConnection {
    * @param macAddress sensor to read
    */
   private void readSensorData(String macAddress) throws SQLException {
-    String sql = "SELECT id, name FROM " + SENSOR + " WHERE mac_address = '" + macAddress + "'";
+    String sql = "SELECT id, name FROM " + SENSOR_TBL + " WHERE mac_address = '" + macAddress + "'";
 
     try (var stmt = con.createStatement()) {
       var rs = stmt.executeQuery(sql);

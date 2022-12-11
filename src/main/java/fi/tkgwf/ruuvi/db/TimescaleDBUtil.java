@@ -9,9 +9,6 @@ import java.util.stream.Collectors;
 /** Utility class to create SQL statements from configured Ruuvitag fields. */
 public class TimescaleDBUtil {
 
-  static final String MEASUREMENT = "measurement";
-  static final String SENSOR = "sensor";
-
   static final String MEASUREMENT_TBL = "measurement";
   static final String SENSOR_TBL = "sensor";
 
@@ -82,12 +79,13 @@ public class TimescaleDBUtil {
   }
 
   /**
-   * Create continuous aggregate with time_bucket function.
+   * Create real-time aggregate with time_bucket function. NOTE the suffix is also used as a 'bucket name'
+   * for the averages.
    *
    * @param suffix view name measurement_suffix
    * @param interval postgresql interval. e.g. 1 month
-   */
-  public static String getCreateContinuousAggregate(String suffix, String interval) {
+    */
+  public static String getCreateRealtimeAggregate(String suffix, String interval) {
     var fields = Configuration.get().storage.fields;
     var averages =
         fields.stream()
@@ -98,14 +96,15 @@ public class TimescaleDBUtil {
         + MEASUREMENT_TBL
         + "_"
         + suffix
-        + " WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS SELECT"
-        + " time_bucket(interval '"
+        + " WITH (timescaledb.continuous,"
+        + " timescaledb.materialized_only = false)"
+        + " AS SELECT time_bucket(interval '"
         + interval
-        + "', \"time\") AS bucket, "
+        + "', \"time\") AS " + suffix + ", "
         + averages
         + ", device_id FROM "
         + MEASUREMENT_TBL
-        + " GROUP BY bucket, device_id";
+        + " GROUP BY " + suffix + ", device_id";
   }
 
   public static String getCreateContinuousAggregatePolicy(
