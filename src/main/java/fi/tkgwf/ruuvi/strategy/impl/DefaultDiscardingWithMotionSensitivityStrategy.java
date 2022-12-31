@@ -9,9 +9,9 @@ import java.util.*;
  * Normally discard measurements that are coming in too fast, except when a sudden acceleration
  * change takes place -- in that case the measurement is always saved.
  *
- * <p>The time limit is defined as {@link Configuration#sensor#measurementUpdateLimit}. The
+ * <p>The time limit is defined as {@link Configuration#sensorDefaults#measurementUpdateLimit}. The
  * acceleration bounds are defined as values compared to the previous measurement with {@link
- * Configuration#sensor#defaultWithMotionSensitivityStrategyThreshold}.
+ * Configuration#sensorDefaults#defaultWithMotionSensitivityStrategyThreshold}.
  *
  * <p>The limit is applied separately to all the different devices sending data, i.e. per MAC
  * address.
@@ -20,7 +20,8 @@ public class DefaultDiscardingWithMotionSensitivityStrategy implements LimitingS
   private final DiscardUntilEnoughTimeHasElapsedStrategy defaultStrategy =
       new DiscardUntilEnoughTimeHasElapsedStrategy();
 
-  private final Double threshold = Configuration.get().sensor.motionSensitivityStrategyThreshold;
+  private final Double threshold =
+      Configuration.get().sensorDefaults.motionSensitivityStrategyThreshold;
   private final List<EnhancedRuuviMeasurement> previousMeasurements = new ArrayList<>();
   private boolean previousOutsideOfRange = false;
 
@@ -28,7 +29,9 @@ public class DefaultDiscardingWithMotionSensitivityStrategy implements LimitingS
   public Optional<EnhancedRuuviMeasurement> apply(final EnhancedRuuviMeasurement measurement) {
     previousMeasurements.add(measurement);
     if (previousMeasurements.size()
-        > Configuration.get().sensor.motionSensitivityStrategyNumberOfPreviousMeasurementsToKeep) {
+        > Configuration.get()
+            .sensorDefaults
+            .motionSensitivityStrategyNumberOfPreviousMeasurementsToKeep) {
       previousMeasurements.remove(0);
     }
     // Always apply the default strategy to keep the timestamps updated there:

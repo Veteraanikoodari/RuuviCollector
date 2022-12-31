@@ -1,5 +1,6 @@
 package fi.tkgwf.ruuvi;
 
+import fi.tkgwf.ruuvi.config.Configuration;
 import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import fi.tkgwf.ruuvi.utils.HCIParser;
 
@@ -9,6 +10,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 public class TestDataFactory {
     public static String getDataFormat5Msg() {
@@ -62,10 +65,30 @@ public class TestDataFactory {
         em = new BeaconHandler().handle(hciData);
         System.out.println(em);
     }
+
+    public static String getConfiguredMacFromCollection() {
+        var set = Configuration.get().getConfiguredMacAddresses();
+        var idx =new Random(System.currentTimeMillis()).nextInt(set.size());
+        var counter = 0;
+        while(set.iterator().hasNext()) {
+            if (counter++ == idx) {
+                return set.iterator().next();
+            }
+        }
+        return null;
+    }
+
     public static String getRandomMacFromCollection() {
         var tmp = List.of("AA", "BB", "CC", "DD", "EE", "FF");
         var idx =new Random(System.currentTimeMillis()).nextInt(6);
         return "XX XX XX XX XX XX".replaceAll("XX", tmp.get(idx));
+    }
+
+    public static List<Long> getMeasurementTimes(long startTime, int count, int intervalInMs) {
+        return LongStream.iterate(startTime, i -> i + intervalInMs)
+            .limit(count)
+            .boxed()
+            .collect(Collectors.toList());
     }
 }
 

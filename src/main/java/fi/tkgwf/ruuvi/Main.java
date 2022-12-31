@@ -31,7 +31,7 @@ public class Main {
   }
 
   private BufferedReader startHciListeners() throws IOException {
-    String[] scan = Configuration.get().sensor.scanCommand.split(" ");
+    String[] scan = Configuration.get().sensorDefaults.scanCommand.split(" ");
     if (scan.length > 0 && Utils.isNotBlank(scan[0])) {
       Process hcitool = new ProcessBuilder(scan).start();
       Runtime.getRuntime().addShutdownHook(new Thread(() -> hcitool.destroyForcibly()));
@@ -39,10 +39,10 @@ public class Main {
     } else {
       log.debug("Skipping scan command, scan command is blank.");
     }
-    String[] dump = Configuration.get().sensor.dumpCommand.split(" ");
+    String[] dump = Configuration.get().sensorDefaults.dumpCommand.split(" ");
     Process hcidump = new ProcessBuilder(dump).start();
     Runtime.getRuntime().addShutdownHook(new Thread(() -> hcidump.destroyForcibly()));
-    log.debug("Starting dump with: " + Configuration.get().sensor.dumpCommand);
+    log.debug("Starting dump with: " + Configuration.get().sensorDefaults.dumpCommand);
     return new BufferedReader(new InputStreamReader(hcidump.getInputStream()));
   }
 
@@ -97,8 +97,8 @@ public class Main {
           if (Utils.hasMacAddress(line)) {
             latestMAC = Utils.getMacFromLine(line);
           }
-          // TODO Apply Mac Address Filtering
-          if (Configuration.get().sensor.isAllowedMac(latestMAC)) {
+          // Only proceed when configured MAC address is received.
+          if (Configuration.get().isConfiguredMac(latestMAC)) {
             HCIData hciData = parser.readLine(line);
             if (hciData != null) {
               beaconHandler

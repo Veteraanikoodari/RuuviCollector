@@ -14,7 +14,11 @@ public abstract class TimescaleTestBase {
 
   @Container
   protected static final JdbcDatabaseContainer<?> container =
-      new TimescaleDBContainerProvider().newInstance().withDatabaseName("ruuvi");
+      new TimescaleDBContainerProvider()
+          .newInstance()
+          .withDatabaseName("ruuvi")
+          .withUsername("admin")
+          .withPassword("admin");
 
   @BeforeAll
   static void initAll() throws SQLException {

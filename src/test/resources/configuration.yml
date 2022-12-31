@@ -1,35 +1,29 @@
 
-sensor:
-    measurementUpdateLimitMs: 9900
+sensorDefaults:
+    measurementUpdateLimitMs: 10000
     motionSensitivityStrategyThreshold: 0.05
     motionSensitivityStrategyNumberOfPreviousMeasurementsToKeep: 3
     scanCommand: "hcitool lescan --duplicates --passive"
     dumpCommand: "hcidump --raw"
-    # <macAddress, name> map to differentiate sensors in human-readable way
-    macAddressToName:
-        A1A1A1A1A1A1: "sensor1"
-        A2A2A2A2A2A2: "sensor2"
 
-    macAddressToLocation:
-        A1A1A1A1A1A1: "location1"
-        A2A2A2A2A2A2: "location2"
+sensors:
+  - macAddress: A1A1A1A1A1A1
+    locationId: 1
+  - macAddress: A2A2A2A2A2A2
+    locationId: 2
+  - macAddress: A1B1C1D1E1F1
+    locationId: 3
 
-    # mac address whitelist filtering
-    allowedMac: { }
-
-location:
-    "Eteinen": "ylhäällä ovessa"
-    "KHH": "ylhäällä KHH:n ovessa"
-    "Makuuhuone": "kaapin päällä"
-    "Niilon huone": "komeron ovessa"
-    "Nupun huone": "oven sisäpuolella"
-    "Nuutin huone": "oven sisäpuolella"
-    "Sauna": "seinällä laudetasolla"
-    "Tekninen tila": "seinällä"
-    "Terassi": "ulkona katoksessa, varjossa"
-    "Terassin ovi": "ovessa, ylhällä sisäpuolella"
-    "Varasto": "sisällä, talon puoleinen seinä"
-
+locations:
+  - id: 1
+    name: "location 1"
+    description: "this is location 1"
+  - id: 2
+    name: "location 2"
+    description: "this is location 2"
+  - id: 3
+    name: "location 3"
+    description: "this is location 3"
 
 storage:
     receiver:
@@ -68,6 +62,14 @@ timescaleDB:
     # Optional grafana user is created with read only privileges
     grafanaUser: "grafana"
     grafanaPwd: "grafana"
+    # aggregate table will be named: measurement_five_minutes
+    rtAggregateSuffix: "five_minutes"
+    # aggregate data is downsampled to 10 minute buckets
+    rtAggregateInterval: "10 minutes"
+    rtAggregateStartOffset: "2 month"
+    rtAggregateEndOffset: "1 week"
+    rtAggregateUpdateInterval: "1 hour"
+    measurementRetentionPolicy: "2 month"
 
 prometheus:
     httpPort: 9155

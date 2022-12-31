@@ -43,7 +43,6 @@ public class BeaconHandler {
       EnhancedRuuviMeasurement enhancedMeasurement = new EnhancedRuuviMeasurement(measurement);
       enhancedMeasurement.setMac(hciData.mac);
       enhancedMeasurement.setRssi(hciData.rssi);
-      enhancedMeasurement.setName(cfg.sensor.macAddressToName.get(hciData.mac));
       enhancedMeasurement.setReceiver(Configuration.get().storage.receiver);
       return Optional.of(enhancedMeasurement);
     }

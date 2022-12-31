@@ -7,21 +7,23 @@ import fi.tkgwf.ruuvi.config.Configuration;
 import fi.tkgwf.ruuvi.service.PersistenceServiceException;
 import fi.tkgwf.ruuvi.utils.Utils;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import lombok.AllArgsConstructor;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TimescaleDBConnection implements RuuviDBConnection {
 
   private static final Configuration cfg = Configuration.get();
-  private final Map<String, ConfiguredSensor> configuredSensors = new HashMap<>();
   private final Connection con;
   // cached for efficiency
   private PreparedStatement writeMeasurementPS;
-  private int batchCounter;
+  private int batchCounter = 1;
+  // track number of measurements written to database.
+  private int totalMeasurementWrites;
+  private Set<String> unidentifiedSensors = new HashSet<>();
+  private Map<String, Configuration.Sensor> macAddressToSensor;
 
   public static TimescaleDBConnection fromConfiguration() throws SQLException {
     var url = cfg.timescaleDB.url;
@@ -45,6 +47,9 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     con = connection;
     log.info("Configure reflection access to " + EnhancedRuuviMeasurement.class.getSimpleName());
     EnhancedRuuviMeasurement.enableCallFieldGetterByMethodName();
+    macAddressToSensor =
+        cfg.sensors.stream()
+            .collect(Collectors.toMap(sensor -> sensor.macAddress, Function.identity()));
   }
 
   public TimescaleDBConnection autoConfigure() throws SQLException {
@@ -56,14 +61,25 @@ public class TimescaleDBConnection implements RuuviDBConnection {
         createUser(grafanaUser, grafanaPwd);
       }
     }
+    writeLocationInfo();
+    writeSensorInfo();
+    updateSensorLocations();
+
     return this;
+  }
+
+  public int getTotalMeasurementWrites() {
+    return totalMeasurementWrites;
   }
 
   @Override
   public void save(EnhancedRuuviMeasurement measurement) {
     try {
-      writeSensorInfo(measurement);
-      writeMeasurement(measurement);
+      if (macAddressToSensor.containsKey(measurement.getMac())) {
+        writeMeasurement(measurement);
+      } else {
+        maybeLogUnidentifiedSensor(measurement.getMac());
+      }
     } catch (SQLException e) {
       throw new PersistenceServiceException(e);
     }
@@ -87,17 +103,36 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     log.info("-- User created: " + user);
   }
 
+  private void createLocations() {}
+
   private void createTables() throws SQLException {
-    // TODO continuos_aggregate to real time aggregate
-    var db = cfg.timescaleDB.database;
+    final var db = cfg.timescaleDB.database;
+    final var cnf = cfg.timescaleDB;
     log.info("-- Creating tables for database: " + db);
     executeUpdate(getSensorTableStr());
+    executeUpdate(getLocationTableStr());
+    executeUpdate(getSensorLocationTableStr());
     executeUpdate(getMeasurementTableStr());
     executeUpdate(getCreateMeasurementTableIdxStr());
     executeSelectUpdate(getCreateHyperTableStr());
-    executeUpdate(getCreateRealtimeAggregate("five_minutes", "5 minutes"));
-    executeSelectUpdate(
-        getCreateContinuousAggregatePolicy("five_minutes", "1 month", "1 hour", "1 hour"));
+    // fixed RTA with five_minute buckets
+    executeUpdate(getCreateAggregate(cnf.rtAggregateSuffix, cnf.rtAggregateInterval));
+    // update policy for RTA
+    var policyCreated =
+        executeSelectUpdate(
+            getCreateAggregatePolicy(
+                cnf.rtAggregateSuffix,
+                cnf.rtAggregateStartOffset,
+                cnf.rtAggregateEndOffset,
+                cnf.rtAggregateUpdateInterval));
+    if (policyCreated) {
+      // NOTE: This must not be called on subsequent runs!
+      // It would destroy aggregate data older that following retention window
+      // executeUpdate(getRefreshAllInAggregateQuery(MEASUREMENT_TBL + "_five_minutes"));
+      // retention policy for raw data.
+      executeSelectUpdate(
+          getCreateRetentionPolicy(MEASUREMENT_TBL, cnf.measurementRetentionPolicy));
+    }
     log.info("-- Database configured: " + db);
   }
 
@@ -105,7 +140,9 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     initWritePS();
     int idx = 1;
     // Manage preparedStatement values
-    writeMeasurementPS.setInt(idx++, configuredSensors.get(measurement.getMac()).id);
+    var sensor = macAddressToSensor.get(measurement.getMac());
+    writeMeasurementPS.setInt(idx++, sensor.getId());
+    writeMeasurementPS.setInt(idx++, sensor.getLocationId());
     for (var name : cfg.storage.fields) {
       var value = measurement.getFieldValue(name);
       log.debug("Field: " + name + " Value: " + value);
@@ -124,58 +161,93 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     }
     writeMeasurementPS.setObject(idx, Utils.currentTime());
     // Manage writes to database
-    if (cfg.timescaleDB.batchSize > 1) {
-      batchCounter++;
-      writeMeasurementPS.addBatch();
-      if (batchCounter >= cfg.timescaleDB.batchSize) {
-        batchCounter = 0;
-        writeMeasurementPS.executeBatch();
-      }
-    } else {
-      log.info("Write measurement: " + measurement.toString());
-      writeMeasurementPS.executeUpdate();
+    writeMeasurementPS.addBatch();
+    if (++batchCounter > cfg.timescaleDB.batchSize) {
+      batchCounter = 1;
+      writeMeasurementPS.executeBatch();
+      totalMeasurementWrites += cfg.timescaleDB.batchSize;
     }
   }
 
-  /**
-   * Writes sensor info to database if it doesn't exist. Updates sensor name if different from
-   * configured. The check is performed only once per macAddress during runtime.
-   */
-  private void writeSensorInfo(EnhancedRuuviMeasurement measurement) throws SQLException {
-    if (configuredSensors.containsKey(measurement.getMac())) {
-      return;
-    }
-    var macAddress = measurement.getMac();
-    var configuredName = cfg.sensor.macAddressToName.get(macAddress);
-    log.info("Write sensor info for: {} {}", measurement.getMac(), configuredName);
-    readSensorData(macAddress);
-    // Sensor not found
-    if (!configuredSensors.containsKey(macAddress)) {
-      executeUpdate(getWriteSensorInfoStr(macAddress));
-      // read again to update cache
-      readSensorData(macAddress);
-    }
-    // Sensor name in database differs from configured, update
-    else if (!Objects.equals(configuredName, configuredSensors.get(macAddress).name)) {
-      executeUpdate(getUpdateSensorInfoStr(macAddress));
-      configuredSensors.get(macAddress).name = configuredName;
-    }
+  private void writeLocationInfo() {
+    cfg.locations.forEach(
+        location ->
+            executeUpdate(
+                getWriteLocationInfoStr(location.id, location.name, location.description)));
   }
 
   /**
-   * Read sensor from the database. An existing sensor is cached.
-   *
-   * @param macAddress sensor to read
+   * Read / Write / Update sensor info from/to database. Remove sensors with invalid configurations
+   * from map.
    */
-  private void readSensorData(String macAddress) throws SQLException {
-    String sql = "SELECT id, name FROM " + SENSOR_TBL + " WHERE mac_address = '" + macAddress + "'";
+  private void writeSensorInfo() {
+    cfg.sensors.forEach(
+        configured -> {
+          getValidSensorConfiguration(configured.macAddress)
+              .ifPresentOrElse(
+                  valid -> {
+                    readSensorInfo(valid)
+                        .ifPresentOrElse(
+                            fromDatabase -> {
+                              if (needsUpdate(configured, fromDatabase)) {
+                                executeUpdate(getUpdateSensorInfoStr(configured));
+                              }
+                            },
+                            () -> executeUpdate(getInsertSensorInfoStr(configured)));
+                    // read created or updated info to map.
+                    readSensorInfo(configured)
+                        .ifPresent(sensor -> macAddressToSensor.put(sensor.macAddress, sensor));
+                  },
+                  () -> macAddressToSensor.remove(configured.macAddress));
+        });
+  }
+
+  private void updateSensorLocations() {
+    cfg.sensors.forEach(
+        sensor ->
+            getValidSensorConfiguration(sensor.macAddress)
+                .ifPresent(valid -> executeUpdate(getUpsertSensorLocationInfoStr(valid))));
+  }
+
+  /** Read sensor from the database. An existing sensor is cached. */
+  private Optional<Configuration.Sensor> readSensorInfo(Configuration.Sensor configuredSensor)
+      throws PersistenceServiceException {
+    String sql =
+        String.format(
+            "SELECT id, description FROM " + SENSOR_TBL + " WHERE mac_address = '%s'",
+            configuredSensor.macAddress);
+
+    Configuration.Sensor sensorFromDB = null;
 
     try (var stmt = con.createStatement()) {
       var rs = stmt.executeQuery(sql);
       if (rs.next()) {
-        configuredSensors.put(macAddress, new ConfiguredSensor(rs.getInt(1), rs.getString(2)));
+        sensorFromDB =
+            new Configuration.Sensor(
+                rs.getInt(1),
+                configuredSensor.locationId,
+                configuredSensor.macAddress,
+                rs.getString(2));
       }
+    } catch (SQLException e) {
+      throw new PersistenceServiceException(e);
     }
+    return Optional.ofNullable(sensorFromDB);
+  }
+
+  private Optional<Configuration.Sensor> getValidSensorConfiguration(String macAddress) {
+    var configuredSensor = macAddressToSensor.get(macAddress);
+
+    if (configuredSensor == null) {
+      log.info("Detected sensor {} is not configured. Skipping..", macAddress);
+    } else if (cfg.getLocation(configuredSensor.getLocationId()).isEmpty()) {
+      log.info("Detected sensor {} has invalid or missing location id. Skipping..", macAddress);
+      configuredSensor = null;
+    } else if (!isValidMacAddress(configuredSensor.getMacAddress())) {
+      log.info("Sensor mac address is invalid: {}", configuredSensor.getMacAddress());
+      configuredSensor = null;
+    }
+    return Optional.ofNullable(configuredSensor);
   }
 
   private void executeUpdate(String sql) {
@@ -183,20 +255,28 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     try (var stmt = con.createStatement()) {
       stmt.executeUpdate(sql);
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      throw new PersistenceServiceException(e);
     }
   }
 
-  private void executeSelectUpdate(String sql) throws SQLException {
+  /** Run conditional update (IF NOT EXISTS). Return true if operation was actually run. */
+  private boolean executeSelectUpdate(String sql) throws SQLException {
     log.info(sql);
+    boolean didUpdate = false;
     try (var stmt = con.createStatement()) {
       var rs = stmt.executeQuery(sql);
       if (rs.next()) {
-        log.info("Result: " + rs.getString(1));
+        didUpdate = rs.getInt(1) != -1;
       } else {
         throw new SQLException("Initialization error with statement: " + sql);
       }
     }
+    if (didUpdate) {
+      log.info("update performed successfully.");
+    } else {
+      log.info("update not performed as object already exists.");
+    }
+    return didUpdate;
   }
 
   private boolean executeQueryReturnsNoRows(String sql) {
@@ -214,9 +294,13 @@ public class TimescaleDBConnection implements RuuviDBConnection {
     }
   }
 
-  @AllArgsConstructor
-  private static class ConfiguredSensor {
-    int id;
-    String name;
+  private boolean needsUpdate(Configuration.Sensor configured, Configuration.Sensor existing) {
+    return !Objects.equals(configured.description, existing.description);
+  }
+
+  private void maybeLogUnidentifiedSensor(String macAddress) {
+    if (unidentifiedSensors.add(macAddress)) {
+      log.info("Detected sensor with address {} that is not configured. Ignoring..", macAddress);
+    }
   }
 }

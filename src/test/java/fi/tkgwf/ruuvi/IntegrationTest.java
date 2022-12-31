@@ -1,5 +1,6 @@
 package fi.tkgwf.ruuvi;
 
+import static fi.tkgwf.ruuvi.TestDataFactory.getMeasurementTimes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,9 +13,6 @@ import java.io.BufferedReader;
 import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,12 +24,12 @@ public class IntegrationTest extends TimescaleTestBase {
       "Generate 10 readings at measurement update limit intervals and confirm from storage.")
   void testGeneratedBleDataIsStoredAsExpected() throws SQLException {
 
-    var updateLimit = Configuration.get().sensor.measurementUpdateLimitMs;
+    var updateLimit = Configuration.get().sensorDefaults.measurementUpdateLimitMs;
     var sampleSize = Configuration.get().timescaleDB.batchSize;
     // Configure time supplier, so that our measurements are not discarded
     // because of too high frequency
     Utils.setCurrentTimeMillisSupplier(
-        FixedInstantsProvider.from(getMeasurementTimes(sampleSize * 2 + 2, (int) updateLimit)));
+        FixedInstantsProvider.from(getMeasurementTimes(0, sampleSize * 2 + 2, (int) updateLimit)));
 
     var testData = getTestString(sampleSize);
     final var persistenceService = new PersistenceService(timescale);
@@ -60,12 +58,5 @@ public class IntegrationTest extends TimescaleTestBase {
       sb.append(msg).append("\n");
     }
     return Pair.of(sb.toString(), selectedMacs.size());
-  }
-
-  private List<Long> getMeasurementTimes(int count, int interval) {
-    return LongStream.iterate(0, i -> i + interval)
-        .limit(count)
-        .boxed()
-        .collect(Collectors.toList());
   }
 }
