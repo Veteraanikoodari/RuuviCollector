@@ -52,6 +52,16 @@ storage:
         - "accelerationAngleFromY"
         - "accelerationAngleFromZ"
 
+    fieldsAggregated:
+      - "temperature"
+      - "humidity"
+      - "pressure"
+      - "batteryVoltage"
+      - "txPower"
+      - "rssi"
+      - "movementCounter"
+      - "measurementSequenceNumber"
+
 timescaleDB:
     url: "jdbc:postgresql://localhost/"
     database: "ruuvi"

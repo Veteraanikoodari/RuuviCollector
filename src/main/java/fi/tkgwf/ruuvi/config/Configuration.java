@@ -62,6 +62,7 @@ public class Configuration {
     public String receiver;
     public String method;
     public List<String> fields;
+    public List<String> fieldsAggregated;
   }
 
   public static class TimescaleDB {

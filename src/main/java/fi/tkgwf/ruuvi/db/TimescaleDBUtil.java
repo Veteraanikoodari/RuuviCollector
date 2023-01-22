@@ -124,7 +124,7 @@ public class TimescaleDBUtil {
    * @param interval postgresql interval. e.g. 1 month
    */
   public static String getCreateAggregate(String suffix, String interval) {
-    var fields = Configuration.get().storage.fields;
+    var fields = Configuration.get().storage.fieldsAggregated;
     var averages =
         fields.stream()
             .map(name -> "AVG(" + toSnakeCase(name) + ") AS " + toSnakeCase(name) + "_avg")

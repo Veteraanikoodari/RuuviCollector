@@ -118,20 +118,15 @@ public class Main {
         } catch (Exception ex) {
           if (latestMAC != null) {
             log.warn(
-                "Uncaught exception while handling measurements from MAC address \""
-                    + latestMAC
-                    + "\", if this repeats and this is not a Ruuvitag, try"
-                    + " blacklisting it",
-                ex);
+                "Uncaught exception while handling measurements from MAC address {}",
+                latestMAC, ex);
           } else {
             log.warn(
-                "Uncaught exception while handling measurements, this is an"
-                    + " unexpected event. Please report this to"
-                    + " https://github.com/Scrin/RuuviCollector/issues and include"
-                    + " this log",
+                "Uncaught exception while handling measurements",
                 ex);
           }
           log.debug("Offending line: " + line);
+          healthy = false;
         }
       }
     } catch (IOException ex) {
