@@ -1,23 +1,30 @@
 package fi.tkgwf.ruuvi;
 
-import static fi.tkgwf.ruuvi.TestDataFactory.getMeasurementTimes;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import fi.tkgwf.ruuvi.config.Configuration;
+import fi.tkgwf.ruuvi.db.TimescaleDBUtil;
 import fi.tkgwf.ruuvi.service.PersistenceService;
 import fi.tkgwf.ruuvi.timescaleDB.TimescaleTestBase;
 import fi.tkgwf.ruuvi.utils.Pair;
 import fi.tkgwf.ruuvi.utils.Utils;
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.sql.SQLException;
-import java.util.HashSet;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashSet;
+
+import static fi.tkgwf.ruuvi.TestDataFactory.getMeasurementTimes;
+import static fi.tkgwf.ruuvi.db.TimescaleDBUtil.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class IntegrationTest extends TimescaleTestBase {
-  Main main = new Main();
+
+  private static final int configuredSensorCount = 3;
+
+  private Main main = new Main();
 
   @Test
   @DisplayName(
@@ -26,10 +33,10 @@ public class IntegrationTest extends TimescaleTestBase {
 
     var updateLimit = Configuration.get().sensorDefaults.measurementUpdateLimitMs;
     var sampleSize = Configuration.get().timescaleDB.batchSize;
-    // Configure time supplier, so that our measurements are not discarded
-    // because of too high frequency
+    // Configure time supplier (with extra buffer), so that our measurements
+    // are not discarded because of too high frequency
     Utils.setCurrentTimeMillisSupplier(
-        FixedInstantsProvider.from(getMeasurementTimes(0, sampleSize * 2 + 2, (int) updateLimit)));
+        FixedInstantsProvider.from(getMeasurementTimes(0, sampleSize * 3, (int) updateLimit)));
 
     var testData = getTestString(sampleSize);
     final var persistenceService = new PersistenceService(timescale);
@@ -38,13 +45,18 @@ public class IntegrationTest extends TimescaleTestBase {
 
     var con = container.createConnection("");
     // Confirm measurement..
-    var rs = con.createStatement().executeQuery("SELECT count(*) FROM measurement");
+    assertRowCount(con, MEASUREMENT_TBL, sampleSize);
+    assertRowCount(con, SENSOR_TBL, configuredSensorCount);
+    assertRowCount(con, SENSOR_LOCATION_TBL, configuredSensorCount);
+    assertRowCount(con, LOCATION_TBL, configuredSensorCount);
+  }
+
+  private void assertRowCount(Connection con, String table, int expected) throws SQLException {
+    // Confirm measurement..
+    var rs = con.createStatement().executeQuery("SELECT count(*) FROM " + table);
     assertTrue(rs.next());
-    assertEquals(sampleSize, rs.getInt(1));
-    // ..and sensor table sizes.
-    rs = con.createStatement().executeQuery("SELECT count(*) FROM sensor");
-    assertTrue(rs.next());
-    assertEquals(testData.getRight(), rs.getInt(1));
+    assertEquals(expected, rs.getInt(1));
+    rs.close();
   }
 
   /** Get test String with sampleSize measurements and count of distinct mac addresses used. */

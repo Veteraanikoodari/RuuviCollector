@@ -79,8 +79,8 @@ public class TestDataFactory {
     }
 
     public static String getRandomMacFromCollection() {
-        var tmp = List.of("AA", "BB", "CC", "DD", "EE", "FF");
-        var idx =new Random(System.currentTimeMillis()).nextInt(6);
+        var tmp = List.of("A1", "A2", "A3");
+        var idx =new Random(System.currentTimeMillis()).nextInt(3);
         return "XX XX XX XX XX XX".replaceAll("XX", tmp.get(idx));
     }
 

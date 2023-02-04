@@ -119,11 +119,10 @@ public class Main {
           if (latestMAC != null) {
             log.warn(
                 "Uncaught exception while handling measurements from MAC address {}",
-                latestMAC, ex);
-          } else {
-            log.warn(
-                "Uncaught exception while handling measurements",
+                latestMAC,
                 ex);
+          } else {
+            log.warn("Uncaught exception while handling measurements", ex);
           }
           log.debug("Offending line: " + line);
           healthy = false;

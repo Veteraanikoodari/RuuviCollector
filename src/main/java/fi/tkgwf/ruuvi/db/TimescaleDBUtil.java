@@ -9,10 +9,10 @@ import java.util.stream.Collectors;
 /** Utility class to create SQL statements from configured Ruuvitag fields. */
 public class TimescaleDBUtil {
 
-  static final String MEASUREMENT_TBL = "measurement";
-  static final String SENSOR_TBL = "sensor";
-  static final String LOCATION_TBL = "location";
-  static final String SENSOR_LOCATION_TBL = SENSOR_TBL + "_" + LOCATION_TBL;
+  public static final String MEASUREMENT_TBL = "measurement";
+  public static final String SENSOR_TBL = "sensor";
+  public static final String LOCATION_TBL = "location";
+  public static final String SENSOR_LOCATION_TBL = SENSOR_TBL + "_" + LOCATION_TBL;
 
   private static final String VALID_RUUVI_MAC_ADDRESS = "^[A-F0-9]+$";
 

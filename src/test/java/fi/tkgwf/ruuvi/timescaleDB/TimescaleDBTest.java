@@ -42,7 +42,7 @@ class TimescaleDBTest extends TimescaleTestBase {
     var grafanaCon = TimescaleDBConnection.from(con);
     //
     var enhancedMeasurement = new EnhancedRuuviMeasurement(new RuuviMeasurement());
-    enhancedMeasurement.setMac("A1B1C1D1E1F1");
+    enhancedMeasurement.setMac("A3A3A3A3A3A3");
 
     var ex =
         Assertions.assertThrows(
