@@ -4,6 +4,7 @@ import fi.tkgwf.ruuvi.bean.HCIData;
 import fi.tkgwf.ruuvi.config.Configuration;
 import fi.tkgwf.ruuvi.handler.BeaconHandler;
 import fi.tkgwf.ruuvi.service.PersistenceService;
+import fi.tkgwf.ruuvi.service.PersistenceServiceException;
 import fi.tkgwf.ruuvi.utils.HCIParser;
 import fi.tkgwf.ruuvi.utils.MeasurementValueCalculator;
 import fi.tkgwf.ruuvi.utils.Utils;
@@ -11,148 +12,137 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.influxdb.InfluxDBIOException;
+import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class Main {
 
-    private static final Logger LOG = Logger.getLogger(Main.class);
+  private final BeaconHandler beaconHandler = new BeaconHandler();
 
-    private final BeaconHandler beaconHandler = new BeaconHandler();
+  public static void main(String[] args) {
+    Main m = new Main();
 
-    public static void main(String[] args) throws IOException {
-        Main m = new Main();
-
-        if (!m.run()) {
-            LOG.info("Unclean exit");
-            System.exit(1);
-        }
-        LOG.info("Clean exit");
-        // due to a bug in the InfluxDB library, we have to force the exit as a
-        // workaround. See: https://github.com/influxdata/influxdb-java/issues/359
-        if (Configuration.get().storage.method.startsWith("influx")) {
-            System.exit(0);
-        }
+    if (!m.run()) {
+      log.info("Unclean exit");
+      System.exit(1);
     }
+    log.info("Clean exit");
+  }
 
-    private BufferedReader startHciListeners() throws IOException {
-        String[] scan = Configuration.get().sensor.scanCommand.split(" ");
-        if (scan.length > 0 && StringUtils.isNotBlank(scan[0])) {
-            Process hcitool = new ProcessBuilder(scan).start();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> hcitool.destroyForcibly()));
-            LOG.debug("Starting scan with: " + Arrays.toString(scan));
-        } else {
-            LOG.debug("Skipping scan command, scan command is blank.");
-        }
-        String[] dump = Configuration.get().sensor.dumpCommand.split(" ");
-        Process hcidump = new ProcessBuilder(dump).start();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> hcidump.destroyForcibly()));
-        LOG.debug("Starting dump with: " + Configuration.get().sensor.dumpCommand);
-        return new BufferedReader(new InputStreamReader(hcidump.getInputStream()));
+  private BufferedReader startHciListeners() throws IOException {
+    String[] scan = Configuration.get().sensorDefaults.scanCommand.split(" ");
+    if (scan.length > 0 && Utils.isNotBlank(scan[0])) {
+      Process hcitool = new ProcessBuilder(scan).start();
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> hcitool.destroyForcibly()));
+      log.debug("Starting scan with: " + Arrays.toString(scan));
+    } else {
+      log.debug("Skipping scan command, scan command is blank.");
     }
+    String[] dump = Configuration.get().sensorDefaults.dumpCommand.split(" ");
+    Process hcidump = new ProcessBuilder(dump).start();
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> hcidump.destroyForcibly()));
+    log.debug("Starting dump with: " + Configuration.get().sensorDefaults.dumpCommand);
+    return new BufferedReader(new InputStreamReader(hcidump.getInputStream()));
+  }
 
-    /**
-     * Run the collector.
-     *
-     * @return true if the run ends gracefully, false in case of severe errors
-     */
-    public boolean run() {
-        BufferedReader reader;
+  /**
+   * Run the collector.
+   *
+   * @return true if the run ends gracefully, false in case of severe errors
+   */
+  public boolean run() {
+    BufferedReader reader;
+    try {
+      reader = startHciListeners();
+    } catch (IOException ex) {
+      log.error("Failed to start hci processes", ex);
+      return false;
+    }
+    log.info(
+        "BLE listener started successfully, waiting for data... \n"
+            + " If you don't get any data, check that you are able to run 'hcitool lescan'"
+            + " and 'hcidump --raw' without issues");
+    return run(reader, PersistenceService::new);
+  }
+
+  boolean run(
+      final BufferedReader reader, Supplier<PersistenceService> persistenceServiceSupplier) {
+    HCIParser parser = new HCIParser();
+    boolean dataReceived = false;
+    boolean healthy = false;
+    try (final PersistenceService persistenceService = persistenceServiceSupplier.get()) {
+      String line, latestMAC = null;
+      while ((line = reader.readLine()) != null) {
+        if (line.contains("device: disconnected")) {
+          logDisconnectError(line);
+          healthy = false;
+        } else if (line.contains("No such device")) {
+          logNoSuchDeviceError(line);
+          healthy = false;
+        }
+        if (!dataReceived) {
+          if (line.startsWith("> ")) {
+            log.info("Successfully reading data from hcidump");
+            dataReceived = true;
+            healthy = true;
+          } else {
+            continue; // skip the unnecessary garbage at beginning containing hcidump
+            // version and other junk print
+          }
+        }
         try {
-            reader = startHciListeners();
-        } catch (IOException ex) {
-            LOG.error("Failed to start hci processes", ex);
-            return false;
-        }
-        LOG.info(
-                "BLE listener started successfully, waiting for data... \n"
-                    + " If you don't get any data, check that you are able to run 'hcitool lescan'"
-                    + " and 'hcidump --raw' without issues");
-        return run(reader);
-    }
-
-    boolean run(final BufferedReader reader) {
-        HCIParser parser = new HCIParser();
-        boolean dataReceived = false;
-        boolean healthy = false;
-        try (final PersistenceService persistenceService = new PersistenceService()) {
-            String line, latestMAC = null;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("device: disconnected")) {
-                    LOG.error(
-                            line
-                                    + ": Either the bluetooth device was externally disabled or"
-                                    + " physically disconnected");
-                    healthy = false;
-                }
-                if (line.contains("No such device")) {
-                    LOG.error(
-                            line
-                                    + ": Check that your bluetooth adapter is enabled and working"
-                                    + " properly");
-                    healthy = false;
-                }
-                if (!dataReceived) {
-                    if (line.startsWith("> ")) {
-                        LOG.info("Successfully reading data from hcidump");
-                        dataReceived = true;
-                        healthy = true;
-                    } else {
-                        continue; // skip the unnecessary garbage at beginning containing hcidump
-                        // version and other junk print
-                    }
-                }
-                try {
-                    // Read in MAC address from first line
-                    if (Utils.hasMacAddress(line)) {
-                        latestMAC = Utils.getMacFromLine(line);
-                    }
-                    // TODO Apply Mac Address Filtering
-                    if (Configuration.get().sensor.isAllowedMac(latestMAC)) {
-                        HCIData hciData = parser.readLine(line);
-                        if (hciData != null) {
-                            beaconHandler
-                                    .handle(hciData)
-                                    .map(MeasurementValueCalculator::calculateAllValues)
-                                    .ifPresent(persistenceService::store);
-                            latestMAC = null; // "reset" the mac to null to avoid misleading MAC
-                            // addresses when an error happens *after* successfully
-                            // reading a full packet
-                            healthy = true;
-                        }
-                    }
-                } catch (InfluxDBIOException ex) {
-                    LOG.error(
-                            "Database connection lost while attempting to save measurements to"
-                                    + " InfluxDB",
-                            ex);
-                    if (Configuration.get().influxCommon.exitOnInfluxDBIOException) {
-                        return false;
-                    }
-                } catch (Exception ex) {
-                    if (latestMAC != null) {
-                        LOG.warn(
-                                "Uncaught exception while handling measurements from MAC address \""
-                                        + latestMAC
-                                        + "\", if this repeats and this is not a Ruuvitag, try"
-                                        + " blacklisting it",
-                                ex);
-                    } else {
-                        LOG.warn(
-                                "Uncaught exception while handling measurements, this is an"
-                                    + " unexpected event. Please report this to"
-                                    + " https://github.com/Scrin/RuuviCollector/issues and include"
-                                    + " this log",
-                                ex);
-                    }
-                    LOG.debug("Offending line: " + line);
-                }
+          // Read in MAC address from first line
+          log.info("About: " + line);
+          if (Utils.hasMacAddress(line)) {
+            latestMAC = Utils.getMacFromLine(line);
+          }
+          // Only proceed when configured MAC address is received.
+          if (Configuration.get().isConfiguredMac(latestMAC)) {
+            HCIData hciData = parser.readLine(line);
+            if (hciData != null) {
+              beaconHandler
+                  .handle(hciData)
+                  .map(MeasurementValueCalculator::calculateAllValues)
+                  .ifPresent(persistenceService::store);
+              latestMAC = null; // "reset" the mac to null to avoid misleading MAC
+              // addresses when an error happens *after* successfully
+              // reading a full packet
+              healthy = true;
             }
-        } catch (IOException ex) {
-            LOG.error("Uncaught exception while reading measurements", ex);
-            return false;
+          }
+        } catch (PersistenceServiceException ex) {
+          log.error("PersistenceService threw exception. Cause:", ex.getCause());
+          log.error("Shutting down...");
+          healthy = false;
+        } catch (Exception ex) {
+          if (latestMAC != null) {
+            log.warn(
+                "Uncaught exception while handling measurements from MAC address {}",
+                latestMAC,
+                ex);
+          } else {
+            log.warn("Uncaught exception while handling measurements", ex);
+          }
+          log.debug("Offending line: " + line);
+          healthy = false;
         }
-        return healthy;
+      }
+    } catch (IOException ex) {
+      log.error("Uncaught exception while reading measurements", ex);
+      return false;
     }
+    return healthy;
+  }
+
+  private void logDisconnectError(String line) {
+    log.error(
+        line
+            + ": Either the bluetooth device was externally disabled or"
+            + " physically disconnected");
+  }
+
+  private void logNoSuchDeviceError(String line) {
+    log.error(line + ": Check that your bluetooth adapter is enabled and working" + " properly");
+  }
 }

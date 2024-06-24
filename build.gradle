@@ -4,13 +4,13 @@ plugins {
     id 'java'
     id 'com.github.johnrengelman.shadow' version '7.1.2'
     id "com.diffplug.spotless" version "6.11.0"
+    id "io.freefair.lombok" version "6.5.1"
 }
 
 group = 'fi.tkgwf.ruuvi'
 project.version = '1.0.2'
 
-sourceCompatibility = '11'
-targetCompatibility = 11
+sourceCompatibility = '17'
 
 repositories {
     mavenLocal()
@@ -30,20 +30,19 @@ spotless {
     }
     java {
         removeUnusedImports()
-        googleJavaFormat('1.15.0').aosp().reflowLongStrings()
+        googleJavaFormat('1.15.0').reflowLongStrings()
         // fix formatting of type annotations
         formatAnnotations()
+        targetExclude("src/test/**/TestDataFactory.java")
     }
 }
 
 dependencies {
+    compileOnly 'org.slf4j:slf4j-log4j12:2.0.3'
+
     implementation 'org.yaml:snakeyaml:1.33'
     implementation 'fi.tkgwf.ruuvi:ruuvitag-common:1.0.2'
-    implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'org.apache.commons:commons-collections4:4.4'
-    implementation 'org.apache.logging.log4j:log4j-api:2.19.0'
-    implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
-    implementation 'log4j:apache-log4j-extras:1.2.17'
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
     implementation 'org.influxdb:influxdb-java:2.23'
     implementation 'com.influxdb:influxdb-client-java:6.6.0'
     implementation 'org.postgresql:postgresql:42.5.0'
@@ -51,6 +50,8 @@ dependencies {
     implementation 'io.prometheus:simpleclient_httpserver:0.16.0'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+    testImplementation 'org.testcontainers:junit-jupiter:1.17.3'
+    testImplementation 'org.testcontainers:postgresql:1.17.3'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
 }
 
@@ -60,4 +61,8 @@ shadowJar {
 
 application {
     mainClassName = "fi.tkgwf.ruuvi.Main"
+}
+
+test {
+    useJUnitPlatform()
 }
